@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 ironforge = { path = "/media/don-barrigon/steam-ssd/projects/ironforge/core" }
+ironforge-macros = { version = "0.1.1", path = "/media/don-barrigon/steam-ssd/projects/ironforge/macros" }
 
 # ================ seriaalizacion ================
 ahash = { version = "0.8", features = ["serde"] }

@@ -1988,6 +1988,7 @@ dependencies = [
  "hyper",
  "hyper-util",
  "ironforge",
+ "ironforge-macros",
  "mongodb",
  "rcgen",
  "regex",

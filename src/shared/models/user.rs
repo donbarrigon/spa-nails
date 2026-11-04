@@ -6,10 +6,11 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
     pub id: Option<ObjectId>,
-    pub name: String,
+    pub nickname: String,
     pub email: String,
     pub phone: String,
     pub password: String,
+    pub remember_token: Option<String>,
     pub email_verified_at: Option<DateTime<Utc>>,
     pub phone_verified_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
