@@ -1064,7 +1064,7 @@ dependencies = [
 
 [[package]]
 name = "ironforge"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "ahash",
  "backtrace",
@@ -1093,7 +1093,7 @@ dependencies = [
 
 [[package]]
 name = "ironforge-macros"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "darling 0.20.11",
  "proc-macro2",
