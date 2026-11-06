@@ -1,6 +1,8 @@
 use ironforge::{Context, error::validation_error::ValidationError, validator::Validator};
 use ironforge_macros::rules;
+use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize)]
 pub struct UserRegisterValidator {
     pub nickname: String,
     pub email: String,
@@ -14,7 +16,7 @@ impl Validator for UserRegisterValidator {
             nickname => [ required(), min(3), max(255) ],
             email => [ required(), re_email() ],
             phone => [ required(), re_phone() ],
-            password => [ required(), min(8), max(255) ],
+            password => [ required(), min(8), max(32) ],
         }
     }
 }
