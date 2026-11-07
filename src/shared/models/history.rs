@@ -1,4 +1,4 @@
-use ironforge::{Auth, Context, ForgeError, db::mongo_model::ODModel};
+use ironforge::{Auth, Context, ForgeError, ODModel};
 use mongodb::bson::{DateTime, oid::ObjectId};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -13,7 +13,7 @@ pub enum ActionType {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Action {
+pub struct History {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
     pub action: ActionType,
@@ -27,9 +27,9 @@ pub struct Action {
     pub created_at: DateTime,
 }
 
-impl ODModel for Action {
+impl ODModel for History {
     fn coll_name() -> &'static str {
-        "actions"
+        "history"
     }
 
     fn get_id(&self) -> Option<ObjectId> {
@@ -41,7 +41,7 @@ impl ODModel for Action {
     }
 }
 
-impl Action {
+impl History {
     pub async fn record<T: ODModel>(
         c: &mut Context,
         model: T,
@@ -51,7 +51,7 @@ impl Action {
     ) -> Result<(), ForgeError> {
         let auth = Auth::load(c)?;
 
-        let mut action = Self {
+        let mut history = Self {
             id: None,
             action,
             user_id: auth.user_id,
@@ -61,7 +61,7 @@ impl Action {
             description: description.map(Into::into),
             created_at: DateTime::now(),
         };
-        action.create().await?;
+        history.create().await?;
         Ok(())
     }
 }

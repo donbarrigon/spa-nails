@@ -4,7 +4,7 @@ use argon2::{
     Algorithm, Argon2, Params, Version,
     password_hash::{PasswordHasher, PasswordVerifier, phc::PasswordHash},
 };
-use ironforge::{ForgeError, db::mongo_model::ODModel};
+use ironforge::{ForgeError, ODModel};
 use mongodb::bson::{DateTime, doc, oid::ObjectId};
 use serde::{Deserialize, Serialize};
 use tokio::sync::Semaphore;
