@@ -1,0 +1,9 @@
+name: spa_nails_workspace
+publish_to: none
+environment:
+  sdk: ^3.13.1
+workspace:
+  - movil
+  - web
+  - packages/spa_api
+  - packages/spa_shared

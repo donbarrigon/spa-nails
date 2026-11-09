@@ -1,1 +1,22 @@
-/target
+# Rust
+target/
+
+# Dart / Flutter
+.dart_tool/
+build/
+**/.flutter-plugins*
+.pub-cache/
+
+# Salida de dart compile js (se regenera con `just build-web`)
+backend/static/js/*
+!backend/static/js/.gitkeep
+
+# Datos de ejecución del backend (logs y certificados de ironforge)
+backend/tmp/
+
+# Secretos
+.env
+
+# IDE
+.idea/
+*.iml
