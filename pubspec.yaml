@@ -5,5 +5,5 @@ environment:
 workspace:
   - movil
   - web
-  - packages/spa_api
-  - packages/spa_shared
+  - packages/client
+  - packages/shared

@@ -3,6 +3,6 @@
 /// More dartdocs go here.
 library;
 
-export 'src/spa_api_base.dart';
+export 'src/client_base.dart';
 
 // TODO: Export any libraries intended for clients of this package.

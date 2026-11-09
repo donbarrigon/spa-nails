@@ -1,4 +1,4 @@
-import 'package:spa_api/spa_api.dart';
+import 'package:client/client.dart';
 import 'package:test/test.dart';
 
 void main() {

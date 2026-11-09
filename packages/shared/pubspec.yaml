@@ -1,4 +1,4 @@
-name: spa_api
+name: shared
 description: A starting point for Dart libraries or applications.
 publish_to: none
 version: 1.0.0

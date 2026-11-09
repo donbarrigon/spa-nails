@@ -1,4 +1,4 @@
-name: spa_shared
+name: client
 description: A starting point for Dart libraries or applications.
 publish_to: none
 version: 1.0.0

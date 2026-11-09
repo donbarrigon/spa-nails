@@ -14,7 +14,7 @@ codegen:
 
 test:
     cargo test
-    cd packages/spa_shared && dart test
+    cd packages/shared && dart test
 
 movil:
     cd movil && flutter run

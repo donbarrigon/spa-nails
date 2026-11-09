@@ -11,8 +11,8 @@ resolution: workspace
 # Add regular dependencies here.
 dependencies:
   web: ^1.1.1
-  spa_api:
-  spa_shared:
+  client:
+  shared:
 
 dev_dependencies:
   build_runner: ^2.4.15

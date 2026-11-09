@@ -1,4 +1,4 @@
-import 'package:spa_shared/spa_shared.dart';
+import 'package:shared/shared.dart';
 
 void main() {
   var awesome = Awesome();

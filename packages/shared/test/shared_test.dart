@@ -1,4 +1,4 @@
-import 'package:spa_shared/spa_shared.dart';
+import 'package:shared/shared.dart';
 import 'package:test/test.dart';
 
 void main() {
