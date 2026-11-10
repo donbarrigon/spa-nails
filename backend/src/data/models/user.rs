@@ -9,7 +9,7 @@ use mongodb::bson::{DateTime, doc, oid::ObjectId};
 use serde::{Deserialize, Serialize};
 use tokio::sync::Semaphore;
 
-use crate::api::handler::validators::user::UserRegisterValidator;
+use crate::handler::validators::user::UserRegisterValidator;
 
 // ===============================================================================
 // Modelo
@@ -17,11 +17,17 @@ use crate::api::handler::validators::user::UserRegisterValidator;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
+    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
     pub nickname: String,
     pub email: String,
+    pub phone_code: String,
     pub phone: String,
     pub password: String,
+    #[serde(default)]
+    pub roles: Vec<String>,
+    #[serde(default)]
+    pub permissions: Vec<String>,
     pub remember_token: Option<String>,
     pub email_verified_at: Option<DateTime>,
     pub phone_verified_at: Option<DateTime>,
@@ -44,10 +50,16 @@ impl ODModel for User {
     }
 
     async fn before_create(&mut self) -> Result<(), ForgeError> {
+        self.email = self.email.trim().to_lowercase();
+        self.nickname = self.nickname.trim().to_string();
+
+        if Self::exists(doc! { "nickname": &self.nickname }).await? {
+            return Err(ForgeError::conflict().message("Nickname already exists"));
+        }
         if Self::exists(doc! { "email": &self.email }).await? {
             return Err(ForgeError::conflict().message("Email already exists"));
         }
-        if Self::exists(doc! { "phone": &self.phone }).await? {
+        if Self::exists(doc! { "phone_code": &self.phone_code, "phone": &self.phone }).await? {
             return Err(ForgeError::conflict().message("Phone already exists"));
         }
 
@@ -69,11 +81,14 @@ impl User {
             id: None,
             nickname: req.nickname,
             email: req.email,
+            phone_code: req.phone_code,
             phone: req.phone,
             password: req.password, // en claro hasta `before_create`, que la hashea
             remember_token: None,
             email_verified_at: None,
             phone_verified_at: None,
+            roles: Vec::new(),
+            permissions: Vec::new(),
             created_at: now,
             updated_at: now,
             deleted_at: None,

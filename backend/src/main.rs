@@ -1,8 +1,9 @@
 use ironforge::Server;
 
-use crate::shared::routes::routes::app_routes;
-pub mod shared;
-pub mod api;
+use crate::routes::routes::app_routes;
+pub mod data;
+pub mod handler;
+pub mod routes;
 
 #[tokio::main]
 async fn main() {
