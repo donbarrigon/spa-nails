@@ -9,7 +9,7 @@ use mongodb::bson::{DateTime, doc, oid::ObjectId};
 use serde::{Deserialize, Serialize};
 use tokio::sync::Semaphore;
 
-use crate::handler::validators::user::UserRegisterValidator;
+use crate::app::handler::validators::user::UserRegisterValidator;
 
 // ===============================================================================
 // Modelo

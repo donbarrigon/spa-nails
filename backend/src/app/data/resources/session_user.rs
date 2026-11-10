@@ -2,7 +2,7 @@ use ironforge::{Authenticatable, ForgeError};
 use mongodb::bson::{DateTime, oid::ObjectId};
 use serde::{Deserialize, Serialize};
 
-use crate::data::models::user::User;
+use crate::app::data::models::user::User;
 
 /// Copia del usuario que vive en la sesión (RAM y documento de sesión en Mongo).
 /// Todo el `User` menos las credenciales: `password` y `remember_token`.

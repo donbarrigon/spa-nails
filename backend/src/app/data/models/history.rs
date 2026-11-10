@@ -3,7 +3,7 @@ use mongodb::bson::{DateTime, oid::ObjectId};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use crate::data::resources::session_user::SessionUser;
+use crate::app::data::resources::session_user::SessionUser;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]

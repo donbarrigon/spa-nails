@@ -5,9 +5,9 @@ pub fn app_routes() -> Router {
         r.prefix("/api", |r| {
             r.post(
                 "/users/register",
-                crate::handler::controllers::user::register,
+                crate::app::handler::controllers::user::register,
             );
-            r.post("/users/login", crate::handler::controllers::user::loggin);
+            r.post("/users/login", crate::app::handler::controllers::user::loggin);
         });
     })
 }

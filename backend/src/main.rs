@@ -1,8 +1,7 @@
 use ironforge::Server;
 
 use crate::routes::routes::app_routes;
-pub mod data;
-pub mod handler;
+pub mod app;
 pub mod routes;
 
 #[tokio::main]
