@@ -16,5 +16,5 @@ test:
     cargo test
     cd packages/shared && dart test
 
-movil:
-    cd movil && flutter run
+mobile:
+    cd mobile && flutter run
