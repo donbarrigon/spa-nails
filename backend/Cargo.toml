@@ -42,6 +42,15 @@ serde_yaml = "0.9.34"
 
 # =============== hash ================
 argon2 = "0.6.0"
+sha2 = "0.10"
+getrandom = "0.3"
+
+# =============== mail ================
+lettre = { version = "0.11", default-features = false, features = ["builder", "smtp-transport", "pool", "hostname", "tokio1-rustls", "webpki-roots", "aws-lc-rs"] }
+
+# =============== http (whatsapp) ================
+# Sin proveedor propio de rustls: usa aws-lc-rs, que instala el servidor.
+reqwest = { version = "0.12", default-features = false, features = ["json", "http2", "rustls-tls-webpki-roots-no-provider"] }
 
 # ================ mongodb ================
 futures = "0.3.28"

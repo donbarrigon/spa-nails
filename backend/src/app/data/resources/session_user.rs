@@ -10,6 +10,8 @@ use crate::app::data::models::user::User;
 pub struct SessionUser {
     pub id: ObjectId,
     pub nickname: String,
+    pub name: String,
+    pub avatar: String,
     pub email: String,
     pub phone_code: String,
     pub phone: String,
@@ -36,6 +38,8 @@ impl TryFrom<&User> for SessionUser {
         Ok(Self {
             id,
             nickname: user.nickname.clone(),
+            name: user.profile.name.clone(),
+            avatar: user.profile.avatar.clone(),
             email: user.email.clone(),
             phone_code: user.phone_code.clone(),
             phone: user.phone.clone(),

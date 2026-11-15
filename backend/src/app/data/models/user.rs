@@ -4,6 +4,7 @@ use argon2::{
     Algorithm, Argon2, Params, Version,
     password_hash::{PasswordHasher, PasswordVerifier, phc::PasswordHash},
 };
+use chrono::NaiveTime;
 use ironforge::{ForgeError, ODModel};
 use mongodb::bson::{DateTime, doc, oid::ObjectId};
 use serde::{Deserialize, Serialize};
@@ -20,6 +21,7 @@ pub struct User {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
     pub nickname: String,
+    pub profile: Profile,
     pub email: String,
     pub phone_code: String,
     pub phone: String,
@@ -28,12 +30,78 @@ pub struct User {
     pub roles: Vec<String>,
     #[serde(default)]
     pub permissions: Vec<String>,
+    /// Solo para empleados; `None` en clientes.
+    pub employee: Option<Employee>,
     pub remember_token: Option<String>,
     pub email_verified_at: Option<DateTime>,
     pub phone_verified_at: Option<DateTime>,
     pub created_at: DateTime,
     pub updated_at: DateTime,
     pub deleted_at: Option<DateTime>,
+}
+
+/// Datos personales del usuario.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Profile {
+    /// Ruta relativa a la imagen.
+    pub avatar: String,
+    /// Imagen de fondo detrás del avatar (ruta relativa).
+    pub banner: String,
+    /// Nombre real.
+    pub name: String,
+    pub birthdate: Option<DateTime>,
+    pub document_type: Option<DocumentType>,
+    pub document: Option<String>,
+    pub address: Option<String>,
+    pub city: Option<String>,
+}
+
+impl Profile {
+    pub const DEFAULT_AVATAR: &'static str = "public/img/profile/avatar.jpg";
+    pub const DEFAULT_BANNER: &'static str = "public/img/profile/banner.jpg";
+}
+
+/// Se guarda en la base como string: "CC", "CE", "TI", "PP", "PPT", "NIT".
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum DocumentType {
+    /// Cédula de ciudadanía
+    Cc,
+    /// Cédula de extranjería
+    Ce,
+    /// Tarjeta de identidad
+    Ti,
+    /// Pasaporte
+    Pp,
+    /// Permiso por protección temporal
+    Ppt,
+    /// Número de identificación tributaria
+    Nit,
+}
+
+/// Datos laborales, solo para empleados.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Employee {
+    pub eps: String,
+    /// Fondo de pensión.
+    pub pension: String,
+    /// Se guarda como "HH:MM:SS"; al ser texto con ceros a la izquierda.
+    pub start_time: NaiveTime,
+    pub end_time: NaiveTime,
+    pub work_days: Vec<WorkDay>,
+}
+
+/// Se guarda en la base como string: "monday", "tuesday", ...
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum WorkDay {
+    Monday,
+    Tuesday,
+    Wednesday,
+    Thursday,
+    Friday,
+    Saturday,
+    Sunday,
 }
 
 impl ODModel for User {
@@ -50,9 +118,6 @@ impl ODModel for User {
     }
 
     async fn before_create(&mut self) -> Result<(), ForgeError> {
-        self.email = self.email.trim().to_lowercase();
-        self.nickname = self.nickname.trim().to_string();
-
         if Self::exists(doc! { "nickname": &self.nickname }).await? {
             return Err(ForgeError::conflict().message("Nickname already exists"));
         }
@@ -80,10 +145,21 @@ impl User {
         Self {
             id: None,
             nickname: req.nickname,
+            profile: Profile {
+                avatar: Profile::DEFAULT_AVATAR.to_string(),
+                banner: Profile::DEFAULT_BANNER.to_string(),
+                name: req.name,
+                birthdate: None,
+                document_type: None,
+                document: None,
+                address: None,
+                city: None,
+            },
             email: req.email,
             phone_code: req.phone_code,
             phone: req.phone,
             password: req.password, // en claro hasta `before_create`, que la hashea
+            employee: None,
             remember_token: None,
             email_verified_at: None,
             phone_verified_at: None,
