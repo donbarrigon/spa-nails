@@ -1,9 +1,10 @@
 //! Envío de mensajes por la WhatsApp Cloud API de Meta con la config de
 //! `env.json` → `extensions.whatsapp`.
 //!
-//! Solo se envían plantillas de autenticación (código de un solo uso con botón
-//! "copiar código"): es lo único que Meta permite mandar a un usuario que no
-//! ha escrito antes al número del negocio.
+//! Solo se envían plantillas aprobadas: es lo único que Meta permite mandar a un
+//! usuario que no ha escrito antes al número del negocio.
+//! - `otp_template` (AUTHENTICATION): código de un solo uso con botón "copiar código".
+//! - `phone_changed_template` (UTILITY): aviso de cambio de teléfono con enlace para deshacerlo.
 
 pub mod account;
 
@@ -31,6 +32,11 @@ pub struct WhatsappEnv {
     /// Nombre de la plantilla de autenticación aprobada (categoría AUTHENTICATION,
     /// con botón "copiar código").
     pub otp_template: String,
+    /// Plantilla aprobada (categoría UTILITY) que avisa al teléfono anterior de un
+    /// cambio de teléfono. Debe tener:
+    /// - cuerpo con una variable `{{1}}`: el teléfono nuevo enmascarado (ej. `+57******4567`);
+    /// - botón de URL dinámica `{app.url}/revert-phone?token={{1}}`: el token para deshacerlo.
+    pub phone_changed_template: String,
     /// Idioma con el que se aprobó la plantilla, ej. `es_MX`.
     pub template_language: String,
     pub timeout_seconds: u64,
@@ -44,6 +50,7 @@ impl Default for WhatsappEnv {
             phone_number_id: String::new(),
             access_token: String::new(),
             otp_template: String::new(),
+            phone_changed_template: String::new(),
             template_language: "es_MX".into(),
             timeout_seconds: 10,
         }
@@ -56,6 +63,7 @@ struct Whatsapp {
     messages_url: String,
     access_token: String,
     otp_template: String,
+    phone_changed_template: String,
     template_language: String,
 }
 
@@ -103,6 +111,7 @@ fn build_whatsapp() -> Result<Whatsapp, String> {
         ),
         access_token: cfg.access_token,
         otp_template: cfg.otp_template,
+        phone_changed_template: cfg.phone_changed_template,
         template_language: cfg.template_language,
     })
 }
@@ -112,8 +121,8 @@ fn build_whatsapp() -> Result<Whatsapp, String> {
 // ===============================================================================
 
 /// Envía un código de un solo uso con la plantilla de autenticación.
-/// `phone_code` con `+` (ej. `+52`) y `phone` solo dígitos, como se guardan en `User`.
-pub async fn send_otp(phone_code: &str, phone: &str, code: &str) -> Result<(), ForgeError> {
+/// `phone` en formato internacional con `+` (ej. `+525512345678`), como se guarda en `User`.
+pub async fn send_otp(phone: &str, code: &str) -> Result<(), ForgeError> {
     let wa = whatsapp()?;
 
     // Las plantillas de autenticación llevan el código dos veces: en el cuerpo
@@ -121,7 +130,7 @@ pub async fn send_otp(phone_code: &str, phone: &str, code: &str) -> Result<(), F
     let body = json!({
         "messaging_product": "whatsapp",
         "recipient_type": "individual",
-        "to": to_number(phone_code, phone),
+        "to": to_number(phone),
         "type": "template",
         "template": {
             "name": wa.otp_template,
@@ -138,17 +147,54 @@ pub async fn send_otp(phone_code: &str, phone: &str, code: &str) -> Result<(), F
         }
     });
 
+    post(wa, &body, "whatsapp::send_otp").await
+}
+
+/// Avisa al teléfono anterior que se cambió el teléfono de la cuenta, con un
+/// botón para deshacerlo. `new_phone_masked` va en el cuerpo y `token` al final
+/// de la URL del botón (`{app.url}/revert-phone?token=`, fija en la plantilla).
+pub async fn send_phone_changed(phone: &str, new_phone_masked: &str, token: &str) -> Result<(), ForgeError> {
+    let wa = whatsapp()?;
+    if wa.phone_changed_template.is_empty() {
+        return Err(ForgeError::internal().message("extensions.whatsapp.phone_changed_template is empty"));
+    }
+
+    let body = json!({
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": to_number(phone),
+        "type": "template",
+        "template": {
+            "name": wa.phone_changed_template,
+            "language": { "code": wa.template_language },
+            "components": [
+                { "type": "body", "parameters": [{ "type": "text", "text": new_phone_masked }] },
+                {
+                    "type": "button",
+                    "sub_type": "url",
+                    "index": "0",
+                    "parameters": [{ "type": "text", "text": token }]
+                }
+            ]
+        }
+    });
+
+    post(wa, &body, "whatsapp::send_phone_changed").await
+}
+
+/// Envía el mensaje a la API y registra en el log si falla.
+async fn post(wa: &Whatsapp, body: &Value, fn_name: &str) -> Result<(), ForgeError> {
     let res = wa
         .http
         .post(&wa.messages_url)
         .bearer_auth(&wa.access_token)
-        .json(&body)
+        .json(body)
         .send()
         .await
         .map_err(|e| {
             log::error(
                 "Failed to send WhatsApp message",
-                Some(json!({ "fn": "whatsapp::send_otp", "error": e.to_string() })),
+                Some(json!({ "fn": fn_name, "error": e.to_string() })),
             );
             ForgeError::internal().caused_by(e).message("Failed to send WhatsApp message")
         })?;
@@ -159,7 +205,7 @@ pub async fn send_otp(phone_code: &str, phone: &str, code: &str) -> Result<(), F
         let error: Value = res.json().await.unwrap_or(Value::Null);
         log::error(
             "WhatsApp API rejected the message",
-            Some(json!({ "fn": "whatsapp::send_otp", "status": status, "error": error["error"] })),
+            Some(json!({ "fn": fn_name, "status": status, "error": error["error"] })),
         );
         return Err(ForgeError::internal().message("Failed to send WhatsApp message"));
     }
@@ -167,11 +213,7 @@ pub async fn send_otp(phone_code: &str, phone: &str, code: &str) -> Result<(), F
     Ok(())
 }
 
-/// Número en formato internacional sin `+` ni separadores, ej. `+52` + `5512345678` → `525512345678`.
-fn to_number(phone_code: &str, phone: &str) -> String {
-    phone_code
-        .chars()
-        .chain(phone.chars())
-        .filter(char::is_ascii_digit)
-        .collect()
+/// Número en formato internacional sin `+` ni separadores, ej. `+525512345678` → `525512345678`.
+fn to_number(phone: &str) -> String {
+    phone.chars().filter(char::is_ascii_digit).collect()
 }

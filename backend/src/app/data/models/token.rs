@@ -32,6 +32,17 @@ pub enum TokenType {
     ResetPasswordCode,
     /// Código de 6 dígitos para una segunda verificación (email o WhatsApp).
     SecondFactor,
+    /// Login a medio camino: la contraseña fue correcta y falta el código
+    /// `SecondFactor`. El cliente lo devuelve junto al código.
+    LoginChallenge,
+    /// Enlace al email nuevo para confirmar el cambio de email.
+    ChangeEmail,
+    /// Código de 6 dígitos al teléfono nuevo para confirmar el cambio de teléfono.
+    ChangePhone,
+    /// Enlace al email anterior para deshacer un cambio de email.
+    RevertEmail,
+    /// Enlace al teléfono anterior para deshacer un cambio de teléfono.
+    RevertPhone,
 }
 
 /// Token de un solo uso. Solo se guarda el SHA-256: el valor en claro va
@@ -81,7 +92,23 @@ impl Token {
         let mut bytes = [0u8; 32];
         random_fill(&mut bytes)?;
         let plain = to_hex(&bytes);
-        Self::issue(user_id, token_type, &plain, data, ttl).await?;
+        Self::issue(user_id, token_type, &plain, data, ttl, true).await?;
+        Ok(plain)
+    }
+
+    /// Como `issue_link`, pero sin borrar los anteriores del mismo tipo.
+    /// Para los de deshacer un cambio: si hay dos cambios seguidos, cada enlace
+    /// enviado a una dirección anterior debe seguir sirviendo.
+    pub async fn issue_extra_link(
+        user_id: ObjectId,
+        token_type: TokenType,
+        data: Option<Value>,
+        ttl: Duration,
+    ) -> Result<String, ForgeError> {
+        let mut bytes = [0u8; 32];
+        random_fill(&mut bytes)?;
+        let plain = to_hex(&bytes);
+        Self::issue(user_id, token_type, &plain, data, ttl, false).await?;
         Ok(plain)
     }
 
@@ -96,7 +123,7 @@ impl Token {
         let mut bytes = [0u8; 4];
         random_fill(&mut bytes)?;
         let plain = format!("{:06}", u32::from_le_bytes(bytes) % 1_000_000);
-        Self::issue(user_id, token_type, &plain, data, ttl).await?;
+        Self::issue(user_id, token_type, &plain, data, ttl, true).await?;
         Ok(plain)
     }
 
@@ -108,6 +135,19 @@ impl Token {
             "expires_at": { "$gt": DateTime::now() },
         })
         .await
+    }
+
+    /// Busca un token de enlace vigente sin gastarlo.
+    pub async fn find_link(token_type: TokenType, plain: &str) -> Result<Self, ForgeError> {
+        Self::coll()?
+            .find_one(doc! {
+                "token_type": token_type_bson(token_type)?,
+                "token_hash": hash(plain),
+                "expires_at": { "$gt": DateTime::now() },
+            })
+            .await
+            .map_err(|e| ForgeError::internal().caused_by(e).message("Failed to read token"))?
+            .ok_or_else(|| ForgeError::not_found().message("Invalid or expired token"))
     }
 
     /// Valida y gasta un código de 6 dígitos del usuario.
@@ -155,6 +195,23 @@ impl Token {
         Ok(token)
     }
 
+    /// Cuenta un intento sobre este token, para códigos que no viven en `tokens`
+    /// (ej. el TOTP del login, contado sobre el `LoginChallenge`). Con
+    /// `MAX_CODE_ATTEMPTS` agotados falla y hay que empezar de nuevo.
+    pub async fn count_attempt(&self) -> Result<(), ForgeError> {
+        let counted = Self::coll()?
+            .find_one_and_update(
+                doc! { "_id": self.id, "attempts": { "$lt": MAX_CODE_ATTEMPTS } },
+                doc! { "$inc": { "attempts": 1 } },
+            )
+            .await
+            .map_err(|e| ForgeError::internal().caused_by(e).message("Failed to read token"))?;
+        if counted.is_none() {
+            return Err(ForgeError::too_many_requests().message("Too many attempts, sign in again"));
+        }
+        Ok(())
+    }
+
     /// Campo de texto guardado en `data`, o `None` si no existe o no es texto.
     /// Ej: `token.data_field("email")`.
     pub fn data_field(&self, key: &str) -> Option<&str> {
@@ -167,15 +224,18 @@ impl Token {
         plain: &str,
         data: Option<Value>,
         ttl: Duration,
+        replace_previous: bool,
     ) -> Result<(), ForgeError> {
         ensure_indexes().await?;
 
-        Self::coll()?
-            .delete_many(doc! { "user_id": user_id, "token_type": token_type_bson(token_type)? })
-            .await
-            .map_err(|e| {
-                ForgeError::internal().caused_by(e).message("Failed to replace previous token")
-            })?;
+        if replace_previous {
+            Self::coll()?
+                .delete_many(doc! { "user_id": user_id, "token_type": token_type_bson(token_type)? })
+                .await
+                .map_err(|e| {
+                    ForgeError::internal().caused_by(e).message("Failed to replace previous token")
+                })?;
+        }
 
         let now = DateTime::now();
         let mut token = Self {

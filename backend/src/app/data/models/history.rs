@@ -61,10 +61,20 @@ impl History {
                 return;
             }
         };
+        Self::record_with_user(auth.user_id, model, data, action, description).await;
+    }
+
+    pub async fn record_with_user<T: ODModel>(
+        user_id: ObjectId,
+        model: T,
+        data: Option<Value>,
+        action: ActionType,
+        description: Option<impl Into<String>>,
+    ) {
         let Some(entity_id) = model.get_id() else {
             log::error(
                 "Failed to record history: model without id",
-                Some(json!({ "fn": "History::record", "error": "model without id", "data": data })),
+                Some(json!({ "fn": "History::record_with_user", "error": "model without id", "data": data })),
             );
             return;
         };
@@ -72,7 +82,7 @@ impl History {
         let mut history = Self {
             id: None,
             action,
-            user_id: auth.user_id,
+            user_id,
             entity: T::coll_name().to_string(),
             entity_id,
             data,
@@ -82,7 +92,7 @@ impl History {
         if let Err(e) = history.create().await {
             log::error(
                 "Failed to record history",
-                Some(json!({ "fn": "History::record", "error": e.to_string(), "data": history })),
+                Some(json!({ "fn": "History::record_with_user", "error": e.to_string(), "data": history })),
             );
         }
     }

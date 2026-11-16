@@ -4,6 +4,9 @@ use crate::routes::routes::app_routes;
 pub mod app;
 pub mod routes;
 
+#[cfg(test)]
+mod test;
+
 #[tokio::main]
 async fn main() {
     // ironforge lee `env.json` y `./tmp/{logs,certs}` relativos al directorio actual.

@@ -8,7 +8,7 @@ use chrono::NaiveTime;
 use ironforge::{ForgeError, ODModel};
 use mongodb::bson::{DateTime, doc, oid::ObjectId};
 use serde::{Deserialize, Serialize};
-use tokio::sync::Semaphore;
+use tokio::sync::{OnceCell, Semaphore};
 
 use crate::app::handler::validators::user::UserRegisterValidator;
 
@@ -21,20 +21,41 @@ pub struct User {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
     pub nickname: String,
-    pub profile: Profile,
+
     pub email: String,
-    pub phone_code: String,
+    /// Formato internacional con `+` y solo dígitos, ej. `+573001234567`.
     pub phone: String,
+    /// Email nuevo esperando confirmación; `email` no cambia hasta confirmarlo.
+    #[serde(default)]
+    pub pending_email: Option<String>,
+    /// Teléfono nuevo esperando confirmación; `phone` no cambia hasta confirmarlo.
+    #[serde(default)]
+    pub pending_phone: Option<String>,
     pub password: String,
     #[serde(default)]
     pub roles: Vec<String>,
     #[serde(default)]
     pub permissions: Vec<String>,
+    pub profile: Profile,
     /// Solo para empleados; `None` en clientes.
     pub employee: Option<Employee>,
     pub remember_token: Option<String>,
     pub email_verified_at: Option<DateTime>,
     pub phone_verified_at: Option<DateTime>,
+    /// Método preferido del segundo factor al iniciar sesión; `None` = desactivado.
+    #[serde(default)]
+    pub two_factor: Option<TwoFactorMethod>,
+    /// Secreto TOTP de la app de autenticación, cifrado con `app.key`
+    /// (ver `services::totp`); `None` = sin configurar.
+    #[serde(default)]
+    pub totp_secret: Option<String>,
+    /// Cuándo se confirmó la app de autenticación con un primer código. Hasta
+    /// entonces el secreto no sirve para iniciar sesión.
+    #[serde(default)]
+    pub totp_confirmed_at: Option<DateTime>,
+    /// Último intervalo de 30 s aceptado: el mismo código no se acepta dos veces.
+    #[serde(default)]
+    pub totp_last_step: Option<i64>,
     pub created_at: DateTime,
     pub updated_at: DateTime,
     pub deleted_at: Option<DateTime>,
@@ -77,6 +98,16 @@ pub enum DocumentType {
     Ppt,
     /// Número de identificación tributaria
     Nit,
+}
+
+/// De dónde sale el código del segundo factor. Se guarda como "email", "whatsapp" o "totp".
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum TwoFactorMethod {
+    Email,
+    Whatsapp,
+    /// App de autenticación (Google Authenticator, Authy, ...).
+    Totp,
 }
 
 /// Datos laborales, solo para empleados.
@@ -124,7 +155,7 @@ impl ODModel for User {
         if Self::exists(doc! { "email": &self.email }).await? {
             return Err(ForgeError::conflict().message("Email already exists"));
         }
-        if Self::exists(doc! { "phone_code": &self.phone_code, "phone": &self.phone }).await? {
+        if Self::exists(doc! { "phone": &self.phone }).await? {
             return Err(ForgeError::conflict().message("Phone already exists"));
         }
 
@@ -156,18 +187,33 @@ impl User {
                 city: None,
             },
             email: req.email,
-            phone_code: req.phone_code,
             phone: req.phone,
+            pending_email: None,
+            pending_phone: None,
             password: req.password, // en claro hasta `before_create`, que la hashea
             employee: None,
             remember_token: None,
             email_verified_at: None,
             phone_verified_at: None,
+            two_factor: None,
+            totp_secret: None,
+            totp_confirmed_at: None,
+            totp_last_step: None,
             roles: Vec::new(),
             permissions: Vec::new(),
             created_at: now,
             updated_at: now,
             deleted_at: None,
+        }
+    }
+
+    /// Si el método sirve como segundo factor: email o teléfono verificado, o
+    /// app de autenticación confirmada.
+    pub fn can_use_two_factor(&self, method: TwoFactorMethod) -> bool {
+        match method {
+            TwoFactorMethod::Email => self.email_verified_at.is_some(),
+            TwoFactorMethod::Whatsapp => self.phone_verified_at.is_some(),
+            TwoFactorMethod::Totp => self.totp_confirmed_at.is_some(),
         }
     }
 
@@ -191,19 +237,26 @@ impl User {
     }
 
     pub async fn check_password(&self, password: String) -> Result<bool, ForgeError> {
-        let _permit = hash_permits().acquire().await.map_err(|e| {
-            ForgeError::internal()
-                .caused_by(e)
-                .message(format!("Hash limiter closed"))
-        })?;
-        let hash = self.password.clone();
-        tokio::task::spawn_blocking(move || verify_sync(&hash, &password))
-            .await
-            .map_err(|e| {
-                ForgeError::internal()
-                    .caused_by(e)
-                    .message(format!("Verify hash failed"))
+        verify_limited(self.password.clone(), password).await
+    }
+
+    /// Para un usuario que no existe: verifica contra un hash falso para tardar
+    /// lo mismo que `check_password`, así el tiempo de respuesta del login no
+    /// revela si la cuenta existe. El hash se crea una vez por proceso.
+    pub async fn check_password_dummy(password: String) -> Result<(), ForgeError> {
+        static DUMMY: OnceCell<String> = OnceCell::const_new();
+        let hash = DUMMY
+            .get_or_try_init(|| async {
+                let _permit = hash_permits().acquire().await.map_err(|e| {
+                    ForgeError::internal().caused_by(e).message("Hash limiter closed")
+                })?;
+                tokio::task::spawn_blocking(|| hash_sync("dummy-password-for-constant-time"))
+                    .await
+                    .map_err(|e| ForgeError::internal().caused_by(e).message("Hash task failed"))?
             })
+            .await?
+            .clone();
+        verify_limited(hash, password).await.map(|_| ())
     }
 
     /// `true` si el hash guardado usa un algoritmo o parámetros más débiles
@@ -267,6 +320,17 @@ fn hash_sync(password: &str) -> Result<String, ForgeError> {
                 .caused_by(e)
                 .message(format!("Failed to hash password, try again"))
         })
+}
+
+/// Verifica en un hilo bloqueante, respetando el límite de hashes simultáneos.
+async fn verify_limited(hash: String, password: String) -> Result<bool, ForgeError> {
+    let _permit = hash_permits()
+        .acquire()
+        .await
+        .map_err(|e| ForgeError::internal().caused_by(e).message("Hash limiter closed"))?;
+    tokio::task::spawn_blocking(move || verify_sync(&hash, &password))
+        .await
+        .map_err(|e| ForgeError::internal().caused_by(e).message("Verify hash failed"))
 }
 
 fn verify_sync(hash: &str, password: &str) -> bool {

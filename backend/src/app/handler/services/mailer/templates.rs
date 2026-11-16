@@ -92,6 +92,127 @@ pub fn second_factor(nickname: &str, code: &str, minutes: u64) -> Email {
     }
 }
 
+/// Al email nuevo: confirmar el cambio.
+pub fn change_email(nickname: &str, link: &str, hours: u64) -> Email {
+    let name = escape(nickname);
+    let link_html = escape(link);
+    Email {
+        subject: format!("Confirma tu nuevo correo electrónico | {BRAND}"),
+        html: layout(
+            "Confirma tu nuevo correo electrónico",
+            &format!(
+                "<p>Hola {name},</p>\
+                 <p>Solicitaste usar esta dirección como el correo de tu cuenta en {BRAND}. \
+                 Confírmala para completar el cambio.</p>\
+                 {button}\
+                 <p>Este enlace es válido durante {hours} horas. Hasta que lo confirmes, \
+                 tu cuenta sigue usando tu correo anterior.</p>\
+                 {fallback}\
+                 <p>Si no solicitaste este cambio, puedes ignorar este mensaje.</p>",
+                button = button("Confirmar correo", &link_html),
+                fallback = fallback(&link_html),
+            ),
+        ),
+        text: format!(
+            "Hola {nickname},\n\n\
+             Solicitaste usar esta dirección como el correo de tu cuenta en {BRAND}. \
+             Confírmala en este enlace para completar el cambio:\n\n\
+             {link}\n\n\
+             El enlace es válido durante {hours} horas. Hasta que lo confirmes, tu cuenta sigue usando tu correo anterior.\n\n\
+             Si no solicitaste este cambio, puedes ignorar este mensaje.\n\n\
+             {BRAND}"
+        ),
+    }
+}
+
+/// Al email anterior: avisar que se cambió, con enlace para deshacerlo.
+pub fn email_changed(nickname: &str, new_email: &str, link: &str, days: u64) -> Email {
+    let name = escape(nickname);
+    let new_email_html = escape(new_email);
+    let link_html = escape(link);
+    Email {
+        subject: format!("Se cambió el correo de tu cuenta | {BRAND}"),
+        html: layout(
+            "Se cambió el correo de tu cuenta",
+            &format!(
+                "<p>Hola {name},</p>\
+                 <p>El correo de tu cuenta en {BRAND} se cambió a <strong>{new_email_html}</strong>. \
+                 Desde ahora los avisos y códigos de acceso llegarán a esa dirección.</p>\
+                 <p>Si fuiste tú, no tienes que hacer nada.</p>\
+                 <p><strong>Si no fuiste tú</strong>, deshaz el cambio: tu correo volverá a ser este \
+                 y se cerrarán todas las sesiones abiertas de tu cuenta.</p>\
+                 {button}\
+                 <p>Este enlace es válido durante {days} días. Después de deshacer el cambio, \
+                 te recomendamos cambiar tu contraseña.</p>\
+                 {fallback}",
+                button = button("Deshacer el cambio", &link_html),
+                fallback = fallback(&link_html),
+            ),
+        ),
+        text: format!(
+            "Hola {nickname},\n\n\
+             El correo de tu cuenta en {BRAND} se cambió a {new_email}.\n\n\
+             Si fuiste tú, no tienes que hacer nada.\n\n\
+             Si no fuiste tú, deshaz el cambio en este enlace: tu correo volverá a ser este \
+             y se cerrarán todas las sesiones abiertas de tu cuenta.\n\n\
+             {link}\n\n\
+             El enlace es válido durante {days} días. Después de deshacer el cambio, te recomendamos cambiar tu contraseña.\n\n\
+             {BRAND}"
+        ),
+    }
+}
+
+/// Aviso: se cambió la contraseña. `link` es la página para recuperar la cuenta.
+pub fn password_changed(nickname: &str, link: &str) -> Email {
+    security_notice(
+        nickname,
+        link,
+        "Se cambió la contraseña de tu cuenta",
+        "La contraseña de tu cuenta se cambió y se cerraron las demás sesiones abiertas.",
+    )
+}
+
+/// Aviso: se desactivó la segunda verificación. `link` es la página para recuperar la cuenta.
+pub fn two_factor_disabled(nickname: &str, link: &str) -> Email {
+    security_notice(
+        nickname,
+        link,
+        "Se desactivó la verificación en dos pasos",
+        "La verificación en dos pasos de tu cuenta se desactivó. Desde ahora solo se pedirá tu contraseña para iniciar sesión.",
+    )
+}
+
+fn security_notice(nickname: &str, link: &str, title: &str, what: &str) -> Email {
+    let name = escape(nickname);
+    let link_html = escape(link);
+    Email {
+        subject: format!("{title} | {BRAND}"),
+        html: layout(
+            title,
+            &format!(
+                "<p>Hola {name},</p>\
+                 <p>{what}</p>\
+                 <p>Si fuiste tú, no tienes que hacer nada.</p>\
+                 <p><strong>Si no fuiste tú</strong>, alguien podría tener acceso a tu cuenta. \
+                 Recupera tu contraseña ahora: se cerrarán todas las sesiones abiertas.</p>\
+                 {button}\
+                 {fallback}",
+                button = button("Recuperar mi cuenta", &link_html),
+                fallback = fallback(&link_html),
+            ),
+        ),
+        text: format!(
+            "Hola {nickname},\n\n\
+             {what}\n\n\
+             Si fuiste tú, no tienes que hacer nada.\n\n\
+             Si no fuiste tú, alguien podría tener acceso a tu cuenta. Recupera tu contraseña ahora \
+             (se cerrarán todas las sesiones abiertas):\n\n\
+             {link}\n\n\
+             {BRAND}"
+        ),
+    }
+}
+
 // ===============================================================================
 // Layout
 // ===============================================================================
