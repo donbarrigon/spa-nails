@@ -337,6 +337,99 @@ impl Validator for ChangePhoneValidator {
 }
 
 // ===============================================================================
+// Google
+// ===============================================================================
+
+/// ID token de Google: JWT de tres partes en base64url.
+const ID_TOKEN_RE: &str = r"^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$";
+/// Los de Google rondan 1-1.5 KB; el tope solo evita cuerpos enormes.
+const ID_TOKEN_MAX: usize = 4096;
+
+/// Login con Google: el ID token que dio `google_sign_in`.
+#[derive(Serialize, Deserialize)]
+pub struct GoogleLoginValidator {
+    pub id_token: String,
+    #[serde(default)]
+    pub remember: bool,
+    /// Igual que en el login con contraseña: por dónde enviar el código si el
+    /// usuario tiene segundo factor.
+    #[serde(default)]
+    pub method: Option<TwoFactorMethod>,
+}
+impl Validator for GoogleLoginValidator {
+    fn prepare_for_validation(&mut self, _: &mut Context) -> Result<(), ValidationError> {
+        self.id_token = self.id_token.trim().to_string();
+        Ok(())
+    }
+
+    fn validate(&mut self, c: &mut Context) -> Result<(), ValidationError> {
+        rules! {
+            self, c,
+            id_token => [ required(), max(ID_TOKEN_MAX), re_ex("id_token", ID_TOKEN_RE) ],
+        }
+    }
+}
+
+/// Registro con Google: el email sale del ID token; el resto lo llena el usuario
+/// (el nombre puede venir prellenado con el de Google).
+#[derive(Serialize, Deserialize)]
+pub struct GoogleRegisterValidator {
+    pub id_token: String,
+    pub nickname: String,
+    pub name: String,
+    /// Con código de país, ej. `+573001234567`.
+    pub phone: String,
+    pub password: String,
+    #[serde(default)]
+    pub remember: bool,
+}
+impl Validator for GoogleRegisterValidator {
+    fn prepare_for_validation(&mut self, _: &mut Context) -> Result<(), ValidationError> {
+        self.id_token = self.id_token.trim().to_string();
+        self.nickname = self.nickname.trim().to_string();
+        self.name = self.name.trim().to_title_case_es();
+        self.phone = normalize_phone(&self.phone);
+        Ok(())
+    }
+
+    fn validate(&mut self, c: &mut Context) -> Result<(), ValidationError> {
+        rules! {
+            self, c,
+            id_token => [ required(), max(ID_TOKEN_MAX), re_ex("id_token", ID_TOKEN_RE) ],
+            nickname => [ required(), re_username(3, 30) ],
+            name => [ required(), re_alpha_spaces(), min(3), max(80) ],
+            phone => [
+                required(),
+                re_phone_code(),
+                known_phone_code().msg("the :field field has an unknown country code"),
+            ],
+            password => [ required(), min(8), max(32) ],
+        }
+    }
+}
+
+/// Vincular Google desde el perfil. Exige la contraseña actual.
+#[derive(Serialize, Deserialize)]
+pub struct GoogleLinkValidator {
+    pub id_token: String,
+    pub password: String,
+}
+impl Validator for GoogleLinkValidator {
+    fn prepare_for_validation(&mut self, _: &mut Context) -> Result<(), ValidationError> {
+        self.id_token = self.id_token.trim().to_string();
+        Ok(())
+    }
+
+    fn validate(&mut self, c: &mut Context) -> Result<(), ValidationError> {
+        rules! {
+            self, c,
+            id_token => [ required(), max(ID_TOKEN_MAX), re_ex("id_token", ID_TOKEN_RE) ],
+            password => [ required().msg("Enter your password") ],
+        }
+    }
+}
+
+// ===============================================================================
 // Teléfono
 // ===============================================================================
 

@@ -16,6 +16,16 @@ pub fn app_routes() -> Router {
                 "/users/login/two-factor/resend",
                 crate::app::handler::controllers::user::resend_two_factor,
             );
+            r.post(
+                "/users/login/google",
+                crate::app::handler::controllers::user::google_login,
+            );
+            r.post(
+                "/users/register/google",
+                crate::app::handler::controllers::user::google_register,
+            );
+            r.post("/users/google", crate::app::handler::controllers::user::link_google);
+            r.delete("/users/google", crate::app::handler::controllers::user::unlink_google);
             r.post("/users/logout", crate::app::handler::controllers::user::logout);
             r.post(
                 "/users/logout/all",

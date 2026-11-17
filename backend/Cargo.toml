@@ -52,6 +52,11 @@ lettre = { version = "0.11", default-features = false, features = ["builder", "s
 # Sin proveedor propio de rustls: usa aws-lc-rs, que instala el servidor.
 reqwest = { version = "0.12", default-features = false, features = ["json", "http2", "rustls-tls-webpki-roots-no-provider"] }
 
+# =============== jwt (login con Google) ================
+# Ya vienen con rustls; se usan directo para verificar el RS256 del ID token.
+aws-lc-rs = "1"
+base64 = "0.22"
+
 # ================ mongodb ================
 futures = "0.3.28"
 

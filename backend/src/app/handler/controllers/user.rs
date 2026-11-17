@@ -18,10 +18,11 @@ use crate::app::{
         resources::session_user::SessionUser,
     },
     handler::{
-        services::{mailer, totp, whatsapp},
+        services::{google, mailer, totp, whatsapp},
         validators::user::{
             ChangeEmailValidator, ChangePasswordValidator, ChangePhoneValidator, CodeValidator,
-            ForgotPasswordValidator, LinkTokenValidator, LoginTwoFactorValidator, PasswordValidator,
+            ForgotPasswordValidator, GoogleLinkValidator, GoogleLoginValidator, GoogleRegisterValidator,
+            LinkTokenValidator, LoginTwoFactorValidator, PasswordValidator,
             ResendTwoFactorValidator, ResetPasswordCodeValidator, ResetPasswordValidator,
             TwoFactorValidator, UserLoginValidator, UserRegisterValidator,
         },
@@ -179,29 +180,43 @@ pub async fn login(c: &mut Context) -> Result<(), ForgeError> {
         user.update_fields(doc! { "password": password }).await?;
     }
 
+    start_session(c, &user, req.remember, req.method).await
+}
+
+/// Último paso del primer factor (contraseña o Google), ya validado:
+/// - Sin segundo factor: inicia sesión y responde `200` con el usuario.
+/// - Con segundo factor: usa `method` (o el preferido) y responde `202` con
+///   `{ "challenge", "method", "expires_in" }`; la sesión se crea en
+///   `POST /api/users/login/two-factor`.
+async fn start_session(
+    c: &mut Context,
+    user: &User,
+    remember: bool,
+    method: Option<TwoFactorMethod>,
+) -> Result<(), ForgeError> {
     let Some(preferred) = user.two_factor else {
-        let auth = c.login(SessionUser::try_from(&user)?, req.remember).await?;
+        let auth = c.login(SessionUser::try_from(user)?, remember).await?;
         return c.response_ok(&*auth.user);
     };
 
     // El método elegido en este login tiene prioridad sobre el preferido.
-    let method = req.method.unwrap_or(preferred);
+    let method = method.unwrap_or(preferred);
     if !user.can_use_two_factor(method) {
         return Err(ForgeError::unprocessable_entity()
             .message("The selected verification method is not available on this account"));
     }
 
     let challenge = Token::issue_link(
-        id_of(&user)?,
+        id_of(user)?,
         TokenType::LoginChallenge,
-        Some(json!({ "remember": req.remember, "method": method })),
+        Some(json!({ "remember": remember, "method": method })),
         Duration::from_secs(LOGIN_CHALLENGE_MINUTES * 60),
     )
     .await?;
 
     match method {
-        TwoFactorMethod::Email => mailer::account::send_second_factor(&user).await?,
-        TwoFactorMethod::Whatsapp => whatsapp::account::send_second_factor(&user).await?,
+        TwoFactorMethod::Email => mailer::account::send_second_factor(user).await?,
+        TwoFactorMethod::Whatsapp => whatsapp::account::send_second_factor(user).await?,
         TwoFactorMethod::Totp => {}
     }
 
@@ -388,6 +403,114 @@ pub async fn disable_two_factor(c: &mut Context) -> Result<(), ForgeError> {
             mailer::account::send_two_factor_disabled(&u).await
         });
         History::record(c, user.clone(), Some(old), Update, Some("User disable two-factor")).await;
+    }
+
+    c.response_ok(&SessionUser::try_from(&user)?)
+}
+
+// ===============================================================================
+// Google
+// ===============================================================================
+// El cliente obtiene el ID token con `google_sign_in` y lo manda en cada request;
+// el backend siempre lo verifica (ver `services::google`). Si vence mientras el
+// usuario llena el formulario de registro, el cliente pide otro.
+//
+// Una cuenta existente nunca se vincula sola por tener el mismo email: se
+// vincula desde el perfil, con sesión y contraseña.
+
+/// `POST /api/users/login/google` — body `{ "id_token", "remember", "method"? }`.
+///
+/// Responde igual que `POST /api/users/login` (`200` o `202` si hay segundo factor).
+/// Sin cuenta vinculada a ese Google:
+/// - `409` si el email ya tiene cuenta: debe entrar con contraseña y vincular desde el perfil.
+/// - `404` si no: debe completar el registro en `POST /api/users/register/google`.
+pub async fn google_login(c: &mut Context) -> Result<(), ForgeError> {
+    let req = c.get_body::<GoogleLoginValidator>().await?;
+    let google = google::verify_id_token(&req.id_token).await?;
+
+    let found = User::find::<User>(doc! { "google_sub": &google.sub })?.limit(1).get().await?.pop();
+    let Some(user) = found.filter(|u| u.deleted_at.is_none()) else {
+        // El email es de quien tiene el token (Google lo verificó): decirle que
+        // ya tiene cuenta no revela nada de otra persona.
+        if User::exists(doc! { "email": &google.email }).await? {
+            return Err(ForgeError::conflict().message(
+                "An account with this email already exists. Sign in with your password and link Google from your profile",
+            ));
+        }
+        return Err(ForgeError::not_found()
+            .message("There is no account linked to this Google account, complete your registration"));
+    };
+
+    start_session(c, &user, req.remember, req.method).await
+}
+
+/// `POST /api/users/register/google` — body `{ "id_token", "nickname", "name", "phone", "password", "remember" }`.
+///
+/// Crea la cuenta con el email de Google (ya verificado) y el login con Google
+/// activado, inicia sesión y envía el código de verificación del teléfono por
+/// WhatsApp. Responde `201` con el usuario de la sesión.
+pub async fn google_register(c: &mut Context) -> Result<(), ForgeError> {
+    let req = c.get_body::<GoogleRegisterValidator>().await?;
+    let google = google::verify_id_token(&req.id_token).await?;
+
+    let remember = req.remember;
+    let mut user = User::fill_google_register(req, google);
+    // `before_create` revisa nickname, email, teléfono y que el Google no esté vinculado.
+    user.create().await?;
+    let auth = c.login(SessionUser::try_from(&user)?, remember).await?;
+
+    notify(&user, "user::google_register", |u| async move {
+        whatsapp::account::send_verify_phone(&u).await
+    });
+    History::record(c, user, None, Create, Some("User register with Google")).await;
+
+    c.response_created(&*auth.user)
+}
+
+/// `POST /api/users/google` — body `{ "id_token", "password" }`.
+///
+/// Exige sesión. Vincula la cuenta de Google para iniciar sesión con ella.
+/// Responde el usuario de la sesión actualizado.
+pub async fn link_google(c: &mut Context) -> Result<(), ForgeError> {
+    let auth = c.auth::<SessionUser>().await?;
+    let req = c.get_body::<GoogleLinkValidator>().await?;
+    let mut user = User::get_by_id(auth.user_id).await?;
+
+    check_session_password(c.ip(), &user, req.password).await?;
+    if user.google_sub.is_some() {
+        return Err(ForgeError::conflict().message("Your account is already linked to Google, unlink it first"));
+    }
+    let google = google::verify_id_token(&req.id_token).await?;
+    if User::exists(doc! { "google_sub": &google.sub }).await? {
+        return Err(ForgeError::conflict().message("This Google account is already linked to another account"));
+    }
+
+    user.update_fields(doc! { "google_sub": &google.sub }).await?;
+    session()?.refresh_user(SessionUser::try_from(&user)?).await?;
+
+    let old = json!({ "google_linked": false });
+    History::record(c, user.clone(), Some(old), Update, Some("User link Google")).await;
+
+    c.response_ok(&SessionUser::try_from(&user)?)
+}
+
+/// `DELETE /api/users/google` — body `{ "password" }`.
+///
+/// Exige sesión. Desvincula Google: desde ahí solo entra con contraseña.
+/// Responde el usuario de la sesión actualizado.
+pub async fn unlink_google(c: &mut Context) -> Result<(), ForgeError> {
+    let auth = c.auth::<SessionUser>().await?;
+    let req = c.get_body::<PasswordValidator>().await?;
+    let mut user = User::get_by_id(auth.user_id).await?;
+
+    check_session_password(c.ip(), &user, req.password).await?;
+
+    if user.google_sub.is_some() {
+        user.update_fields(doc! { "google_sub": null }).await?;
+        session()?.refresh_user(SessionUser::try_from(&user)?).await?;
+
+        let old = json!({ "google_linked": true });
+        History::record(c, user.clone(), Some(old), Update, Some("User unlink Google")).await;
     }
 
     c.response_ok(&SessionUser::try_from(&user)?)
@@ -963,6 +1086,8 @@ pub async fn delete_account(c: &mut Context) -> Result<(), ForgeError> {
         "pending_email": null,
         "pending_phone": null,
         "remember_token": null,
+        // Libera la cuenta de Google para otra cuenta.
+        "google_sub": null,
     })
     .await?;
     session()?.invalidate_user(auth.user_id).await?;

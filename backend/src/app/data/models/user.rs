@@ -7,10 +7,14 @@ use argon2::{
 use chrono::NaiveTime;
 use ironforge::{ForgeError, ODModel};
 use mongodb::bson::{DateTime, doc, oid::ObjectId};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
+use serde_json::Value;
 use tokio::sync::{OnceCell, Semaphore};
 
-use crate::app::handler::validators::user::UserRegisterValidator;
+use crate::app::handler::{
+    services::google::GoogleIdentity,
+    validators::user::{GoogleRegisterValidator, UserRegisterValidator},
+};
 
 // ===============================================================================
 // Modelo
@@ -56,6 +60,10 @@ pub struct User {
     /// Último intervalo de 30 s aceptado: el mismo código no se acepta dos veces.
     #[serde(default)]
     pub totp_last_step: Option<i64>,
+    /// ID de la cuenta de Google vinculada (`sub` del ID token); `None` = sin
+    /// login con Google. Único entre usuarios.
+    #[serde(default)]
+    pub google_sub: Option<String>,
     pub created_at: DateTime,
     pub updated_at: DateTime,
     pub deleted_at: Option<DateTime>,
@@ -75,11 +83,21 @@ pub struct Profile {
     pub document: Option<String>,
     pub address: Option<String>,
     pub city: Option<String>,
+    /// Preferencias libres del usuario como objeto JSON (`{ "clave": valor }`).
+    /// Leer con [`Profile::preference`].
+    #[serde(default)]
+    pub preferences: Value,
 }
 
 impl Profile {
     pub const DEFAULT_AVATAR: &'static str = "public/img/profile/avatar.jpg";
     pub const DEFAULT_BANNER: &'static str = "public/img/profile/banner.jpg";
+
+    /// Valor de la preferencia `key` convertido a `T`; `None` si no existe o
+    /// no tiene la forma de `T`. Ej: `profile.preference::<bool>("dark_mode")`.
+    pub fn preference<T: DeserializeOwned>(&self, key: &str) -> Option<T> {
+        T::deserialize(self.preferences.get(key)?).ok()
+    }
 }
 
 /// Se guarda en la base como string: "CC", "CE", "TI", "PP", "PPT", "NIT".
@@ -158,6 +176,11 @@ impl ODModel for User {
         if Self::exists(doc! { "phone": &self.phone }).await? {
             return Err(ForgeError::conflict().message("Phone already exists"));
         }
+        if let Some(sub) = &self.google_sub
+            && Self::exists(doc! { "google_sub": sub }).await?
+        {
+            return Err(ForgeError::conflict().message("This Google account is already linked to another account"));
+        }
 
         self.hash_password().await?;
 
@@ -172,25 +195,39 @@ impl ODModel for User {
 
 impl User {
     pub fn fill_register(req: UserRegisterValidator) -> Self {
+        Self::new_client(req.nickname, req.name, req.email, req.phone, req.password)
+    }
+
+    /// Registro con Google: el email sale del ID token (ya verificado por
+    /// Google) y la cuenta queda vinculada. El teléfono se verifica aparte.
+    pub fn fill_google_register(req: GoogleRegisterValidator, google: GoogleIdentity) -> Self {
+        let mut user = Self::new_client(req.nickname, req.name, google.email, req.phone, req.password);
+        user.email_verified_at = Some(user.created_at);
+        user.google_sub = Some(google.sub);
+        user
+    }
+
+    fn new_client(nickname: String, name: String, email: String, phone: String, password: String) -> Self {
         let now = DateTime::now();
         Self {
             id: None,
-            nickname: req.nickname,
+            nickname,
             profile: Profile {
                 avatar: Profile::DEFAULT_AVATAR.to_string(),
                 banner: Profile::DEFAULT_BANNER.to_string(),
-                name: req.name,
+                name,
                 birthdate: None,
                 document_type: None,
                 document: None,
                 address: None,
                 city: None,
+                preferences: Value::Object(Default::default()),
             },
-            email: req.email,
-            phone: req.phone,
+            email,
+            phone,
             pending_email: None,
             pending_phone: None,
-            password: req.password, // en claro hasta `before_create`, que la hashea
+            password, // en claro hasta `before_create`, que la hashea
             employee: None,
             remember_token: None,
             email_verified_at: None,
@@ -199,6 +236,7 @@ impl User {
             totp_secret: None,
             totp_confirmed_at: None,
             totp_last_step: None,
+            google_sub: None,
             roles: Vec::new(),
             permissions: Vec::new(),
             created_at: now,

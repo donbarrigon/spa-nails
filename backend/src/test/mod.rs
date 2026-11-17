@@ -2,6 +2,8 @@
 //! (ej. `app/data/models/user.rs` → `app_data_models_user.rs`).
 //! Los tests de funciones privadas van en su propio archivo (`#[cfg(test)] mod tests`).
 
+mod app_data_models_user;
+mod app_handler_services_google;
 mod app_handler_services_totp;
 
 /// Carga `env.json` una sola vez para los tests que lo necesitan (ej. `ForgeError`

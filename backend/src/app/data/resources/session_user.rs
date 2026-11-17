@@ -27,6 +27,9 @@ pub struct SessionUser {
     /// Si tiene la app de autenticación confirmada (el secreto nunca sale del servidor).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub totp_confirmed_at: Option<DateTime>,
+    /// Si puede iniciar sesión con Google (el `sub` nunca sale del servidor).
+    #[serde(default)]
+    pub google_linked: bool,
     pub roles: Vec<String>,
     pub permissions: Vec<String>,
     pub created_at: DateTime,
@@ -58,6 +61,7 @@ impl TryFrom<&User> for SessionUser {
             phone_verified_at: user.phone_verified_at,
             two_factor: user.two_factor,
             totp_confirmed_at: user.totp_confirmed_at,
+            google_linked: user.google_sub.is_some(),
             created_at: user.created_at,
             updated_at: user.updated_at,
             deleted_at: user.deleted_at,
