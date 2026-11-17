@@ -15,6 +15,9 @@ codegen:
 test:
     cargo test
     cd packages/shared && dart test
+    cd packages/client && dart test
+    cd mobile && flutter test
 
-mobile:
-    cd mobile && flutter run
+# App mobile/escritorio con la configuración de mobile/env.json
+mobile *args:
+    cd mobile && flutter run --dart-define-from-file=env.json {{args}}

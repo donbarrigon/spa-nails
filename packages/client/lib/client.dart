@@ -1,8 +1,8 @@
-/// Support for doing something awesome.
+/// Cliente de la API del backend, compartido entre la app mobile y la web.
 ///
-/// More dartdocs go here.
+/// Dart puro: el transporte (`http.Client`) lo pone cada app.
 library;
 
-export 'src/client_base.dart';
-
-// TODO: Export any libraries intended for clients of this package.
+export 'src/api_client.dart';
+export 'src/api_exception.dart';
+export 'src/user_api.dart';

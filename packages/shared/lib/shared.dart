@@ -1,8 +1,10 @@
-/// Support for doing something awesome.
+/// Modelos y validadores compartidos entre la app mobile y la web.
 ///
-/// More dartdocs go here.
+/// Dart puro: no puede importar Flutter ni `dart:io`, porque la web lo compila a JS.
 library;
 
-export 'src/shared_base.dart';
-
-// TODO: Export any libraries intended for clients of this package.
+export 'src/models/session_user.dart';
+export 'src/models/two_factor.dart';
+export 'src/validators/rules.dart';
+export 'src/validators/user.dart';
+export 'src/validators/validator.dart';
