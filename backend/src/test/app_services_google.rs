@@ -8,7 +8,7 @@ use aws_lc_rs::{
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use serde_json::{Value, json};
 
-use crate::app::handler::services::google::{IdTokenError, Jwk, verify_with_keys};
+use crate::app::services::google::{IdTokenError, Jwk, verify_with_keys};
 
 const CLIENT_ID: &str = "web.apps.googleusercontent.com";
 const KID: &str = "kid-1";
@@ -55,7 +55,7 @@ fn token(claims: Value) -> String {
     sign(json!({ "alg": "RS256", "kid": KID, "typ": "JWT" }), claims)
 }
 
-fn verify(token: &str) -> Result<crate::app::handler::services::google::GoogleIdentity, IdTokenError> {
+fn verify(token: &str) -> Result<crate::app::services::google::GoogleIdentity, IdTokenError> {
     verify_with_keys(token, &jwks(), &[CLIENT_ID.to_string()], NOW)
 }
 

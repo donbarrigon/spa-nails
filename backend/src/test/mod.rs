@@ -3,8 +3,8 @@
 //! Los tests de funciones privadas van en su propio archivo (`#[cfg(test)] mod tests`).
 
 mod app_data_models_user;
-mod app_handler_services_google;
-mod app_handler_services_totp;
+mod app_services_google;
+mod app_services_totp;
 
 /// Carga `env.json` una sola vez para los tests que lo necesitan (ej. `ForgeError`
 /// o lo que use `app.key`). `cargo test` corre desde `backend/`, donde está el archivo.

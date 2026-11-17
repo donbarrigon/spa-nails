@@ -11,9 +11,9 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::Value;
 use tokio::sync::{OnceCell, Semaphore};
 
-use crate::app::handler::{
+use crate::app::{
+    handlers::users::validators::user::{GoogleRegisterValidator, UserRegisterValidator},
     services::google::GoogleIdentity,
-    validators::user::{GoogleRegisterValidator, UserRegisterValidator},
 };
 
 // ===============================================================================

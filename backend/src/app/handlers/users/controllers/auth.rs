@@ -17,16 +17,14 @@ use crate::app::{
         },
         resources::session_user::SessionUser,
     },
-    handler::{
-        services::{google, mailer, totp, whatsapp},
-        validators::user::{
-            ChangeEmailValidator, ChangePasswordValidator, ChangePhoneValidator, CodeValidator,
-            ForgotPasswordValidator, GoogleLinkValidator, GoogleLoginValidator, GoogleRegisterValidator,
-            LinkTokenValidator, LoginTwoFactorValidator, PasswordValidator,
-            ResendTwoFactorValidator, ResetPasswordCodeValidator, ResetPasswordValidator,
-            TwoFactorValidator, UserLoginValidator, UserRegisterValidator,
-        },
+    handlers::users::validators::user::{
+        ChangeEmailValidator, ChangePasswordValidator, ChangePhoneValidator, CodeValidator,
+        ForgotPasswordValidator, GoogleLinkValidator, GoogleLoginValidator, GoogleRegisterValidator,
+        LinkTokenValidator, LoginTwoFactorValidator, PasswordValidator,
+        ResendTwoFactorValidator, ResetPasswordCodeValidator, ResetPasswordValidator,
+        TwoFactorValidator, UserLoginValidator, UserRegisterValidator,
     },
+    services::{google, mailer, totp, whatsapp},
 };
 
 pub async fn register(c: &mut Context) -> Result<(), ForgeError> {
