@@ -16,6 +16,7 @@ backend/tmp/
 
 # Secretos
 .env
+backend/env.json
 
 # IDE
 .idea/
