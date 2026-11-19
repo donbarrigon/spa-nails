@@ -5,7 +5,7 @@ import 'validator.dart';
 // Espejo de `backend/src/app/handler/validators/user.rs`: mismos nombres, campos
 // y reglas. Si una regla cambia allá, cambia acá.
 
-/// `POST /api/users/login` — `user` es el email o el teléfono con código de país.
+/// `POST /api/users/auth/login` — `user` es el email o el teléfono con código de país.
 final class UserLoginValidator extends Validator {
   UserLoginValidator({
     required this.user,
@@ -54,7 +54,7 @@ final class UserLoginValidator extends Validator {
       };
 }
 
-/// `POST /api/users/login/two-factor` — el `challenge` del primer paso y el código.
+/// `POST /api/users/auth/login/two-factor` — el `challenge` del primer paso y el código.
 final class LoginTwoFactorValidator extends Validator {
   LoginTwoFactorValidator({required this.challenge, required this.code});
 
@@ -79,7 +79,7 @@ final class LoginTwoFactorValidator extends Validator {
   Map<String, Object?> toJson() => {'challenge': challenge, 'code': code};
 }
 
-/// `POST /api/users/register`.
+/// `POST /api/users/auth/register`.
 final class UserRegisterValidator extends Validator {
   UserRegisterValidator({
     required this.nickname,
@@ -127,7 +127,7 @@ final class UserRegisterValidator extends Validator {
       };
 }
 
-/// `POST /api/users/login/google` — el ID token que dio Google Sign-In.
+/// `POST /api/users/auth/login/google` — el ID token que dio Google Sign-In.
 final class GoogleLoginValidator extends Validator {
   GoogleLoginValidator({required this.idToken, this.remember = false, this.method});
 
@@ -150,7 +150,7 @@ final class GoogleLoginValidator extends Validator {
       };
 }
 
-/// `POST /api/users/register/google` — el email sale del ID token; el resto lo
+/// `POST /api/users/auth/register/google` — el email sale del ID token; el resto lo
 /// llena el usuario (el nombre puede venir prellenado con el de Google).
 final class GoogleRegisterValidator extends Validator {
   GoogleRegisterValidator({

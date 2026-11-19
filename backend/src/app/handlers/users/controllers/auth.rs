@@ -62,7 +62,7 @@ pub async fn register(c: &mut Context) -> Result<(), ForgeError> {
     c.response_created(&*auth.user)
 }
 
-/// `POST /api/users/verify/email` — body `{ "token": "..." }` (el del enlace del email).
+/// `POST /api/users/auth/verify/email` — body `{ "token": "..." }` (el del enlace del email).
 ///
 /// No exige sesión: el enlace se puede abrir en otro navegador o dispositivo.
 /// El token (32 bytes aleatorios) es la prueba de que es el dueño del email.
@@ -90,7 +90,7 @@ pub async fn verify_email(c: &mut Context) -> Result<(), ForgeError> {
     c.response_no_content()
 }
 
-/// `POST /api/users/verify/phone` — body `{ "code": "123456" }` (el que llega por WhatsApp).
+/// `POST /api/users/auth/verify/phone` — body `{ "code": "123456" }` (el que llega por WhatsApp).
 ///
 /// Exige sesión: el código son 6 dígitos y solo es válido junto al usuario.
 /// Responde el usuario de la sesión actualizado para que la app no tenga que pedirlo.
@@ -131,14 +131,14 @@ const LOGIN_CHALLENGE_MINUTES: u64 = 10;
 /// no revela cuál de los tres falló.
 const INVALID_CREDENTIALS: &str = "The email, phone number or password is incorrect";
 
-/// `POST /api/users/login` — body `{ "user", "password", "remember", "method"? }`.
+/// `POST /api/users/auth/login` — body `{ "user", "password", "remember", "method"? }`.
 ///
 /// `user` es el email o el teléfono con código de país.
 /// - Sin segundo factor: inicia sesión y responde `200` con el usuario.
 /// - Con segundo factor: usa `method` (o el preferido del usuario si no viene)
 ///   y responde `202` con `{ "challenge", "method", "expires_in" }`. Con email o
 ///   WhatsApp envía el código; con `totp` el código lo da la app de autenticación.
-///   La sesión se crea en `POST /api/users/login/two-factor`.
+///   La sesión se crea en `POST /api/users/auth/login/two-factor`.
 pub async fn login(c: &mut Context) -> Result<(), ForgeError> {
     let req = c.get_body::<UserLoginValidator>().await?;
 
@@ -185,7 +185,7 @@ pub async fn login(c: &mut Context) -> Result<(), ForgeError> {
 /// - Sin segundo factor: inicia sesión y responde `200` con el usuario.
 /// - Con segundo factor: usa `method` (o el preferido) y responde `202` con
 ///   `{ "challenge", "method", "expires_in" }`; la sesión se crea en
-///   `POST /api/users/login/two-factor`.
+///   `POST /api/users/auth/login/two-factor`.
 async fn start_session(
     c: &mut Context,
     user: &User,
@@ -225,11 +225,11 @@ async fn start_session(
     }))
 }
 
-/// `POST /api/users/login/two-factor` — body `{ "challenge", "code" }`.
+/// `POST /api/users/auth/login/two-factor` — body `{ "challenge", "code" }`.
 ///
 /// Segundo paso del login: valida el código (enviado por email/WhatsApp o de la
 /// app de autenticación, según el método del primer paso) y crea la sesión.
-/// Admite pocos intentos (`MAX_CODE_ATTEMPTS`); agotados hay que volver a `/users/login`.
+/// Admite pocos intentos (`MAX_CODE_ATTEMPTS`); agotados hay que volver a `/api/users/auth/login`.
 pub async fn login_two_factor(c: &mut Context) -> Result<(), ForgeError> {
     let req = c.get_body::<LoginTwoFactorValidator>().await?;
 
@@ -275,7 +275,7 @@ pub async fn login_two_factor(c: &mut Context) -> Result<(), ForgeError> {
 /// así que sin tope se podría adivinar pidiendo códigos sin fin.
 const MAX_TWO_FACTOR_RESENDS: u64 = 3;
 
-/// `POST /api/users/login/two-factor/resend` — body `{ "challenge", "method"? }`.
+/// `POST /api/users/auth/login/two-factor/resend` — body `{ "challenge", "method"? }`.
 ///
 /// Reenvía el código del segundo factor sin repetir la contraseña. Con `method`
 /// cambia de canal (ej. de email a WhatsApp, o a la app de autenticación, que
@@ -331,11 +331,11 @@ pub async fn resend_two_factor(c: &mut Context) -> Result<(), ForgeError> {
     c.response_accepted(&json!({ "challenge": req.challenge, "method": method }))
 }
 
-/// `PUT /api/users/two-factor` — body `{ "method": "email" | "whatsapp" | "totp", "password" }`.
+/// `PUT /api/users/auth/two-factor` — body `{ "method": "email" | "whatsapp" | "totp", "password" }`.
 ///
 /// Exige sesión. Activa el segundo factor o cambia el método preferido para el
 /// login. Solo se acepta un canal ya verificado o la app de autenticación ya
-/// confirmada. Para desactivarlo: `DELETE /api/users/two-factor`.
+/// confirmada. Para desactivarlo: `DELETE /api/users/auth/two-factor`.
 /// Responde el usuario de la sesión actualizado.
 pub async fn update_two_factor(c: &mut Context) -> Result<(), ForgeError> {
     let auth = c.auth::<SessionUser>().await?;
@@ -369,7 +369,7 @@ pub async fn update_two_factor(c: &mut Context) -> Result<(), ForgeError> {
     c.response_ok(&SessionUser::try_from(&user)?)
 }
 
-/// `DELETE /api/users/two-factor` — body `{ "password" }`.
+/// `DELETE /api/users/auth/two-factor` — body `{ "password" }`.
 ///
 /// Exige sesión. Desactiva el segundo factor y borra la app de autenticación
 /// (secreto incluido): para volver a usarla hay que configurarla de nuevo.
@@ -416,12 +416,12 @@ pub async fn disable_two_factor(c: &mut Context) -> Result<(), ForgeError> {
 // Una cuenta existente nunca se vincula sola por tener el mismo email: se
 // vincula desde el perfil, con sesión y contraseña.
 
-/// `POST /api/users/login/google` — body `{ "id_token", "remember", "method"? }`.
+/// `POST /api/users/auth/login/google` — body `{ "id_token", "remember", "method"? }`.
 ///
-/// Responde igual que `POST /api/users/login` (`200` o `202` si hay segundo factor).
+/// Responde igual que `POST /api/users/auth/login` (`200` o `202` si hay segundo factor).
 /// Sin cuenta vinculada a ese Google:
 /// - `409` si el email ya tiene cuenta: debe entrar con contraseña y vincular desde el perfil.
-/// - `404` si no: debe completar el registro en `POST /api/users/register/google`.
+/// - `404` si no: debe completar el registro en `POST /api/users/auth/register/google`.
 pub async fn google_login(c: &mut Context) -> Result<(), ForgeError> {
     let req = c.get_body::<GoogleLoginValidator>().await?;
     let google = google::verify_id_token(&req.id_token).await?;
@@ -442,7 +442,7 @@ pub async fn google_login(c: &mut Context) -> Result<(), ForgeError> {
     start_session(c, &user, req.remember, req.method).await
 }
 
-/// `POST /api/users/register/google` — body `{ "id_token", "nickname", "name", "phone", "password", "remember" }`.
+/// `POST /api/users/auth/register/google` — body `{ "id_token", "nickname", "name", "phone", "password", "remember" }`.
 ///
 /// Crea la cuenta con el email de Google (ya verificado) y el login con Google
 /// activado, inicia sesión y envía el código de verificación del teléfono por
@@ -465,7 +465,7 @@ pub async fn google_register(c: &mut Context) -> Result<(), ForgeError> {
     c.response_created(&*auth.user)
 }
 
-/// `POST /api/users/google` — body `{ "id_token", "password" }`.
+/// `POST /api/users/auth/google` — body `{ "id_token", "password" }`.
 ///
 /// Exige sesión. Vincula la cuenta de Google para iniciar sesión con ella.
 /// Responde el usuario de la sesión actualizado.
@@ -492,7 +492,7 @@ pub async fn link_google(c: &mut Context) -> Result<(), ForgeError> {
     c.response_ok(&SessionUser::try_from(&user)?)
 }
 
-/// `DELETE /api/users/google` — body `{ "password" }`.
+/// `DELETE /api/users/auth/google` — body `{ "password" }`.
 ///
 /// Exige sesión. Desvincula Google: desde ahí solo entra con contraseña.
 /// Responde el usuario de la sesión actualizado.
@@ -522,7 +522,7 @@ pub async fn unlink_google(c: &mut Context) -> Result<(), ForgeError> {
 // sin verificar). Al confirmar se avisa al dato anterior con un enlace para
 // deshacer el cambio durante `REVERT_CHANGE_DAYS`.
 
-/// `PUT /api/users/email` — body `{ "email", "password" }`.
+/// `PUT /api/users/auth/email` — body `{ "email", "password" }`.
 ///
 /// Exige sesión. Guarda el email en `pending_email` y envía el enlace de
 /// confirmación al email nuevo. Responde el usuario de la sesión actualizado.
@@ -546,7 +546,7 @@ pub async fn change_email(c: &mut Context) -> Result<(), ForgeError> {
     c.response_ok(&SessionUser::try_from(&user)?)
 }
 
-/// `POST /api/users/email/confirm` — body `{ "token" }` (el del enlace al email nuevo).
+/// `POST /api/users/auth/email/confirm` — body `{ "token" }` (el del enlace al email nuevo).
 ///
 /// No exige sesión: el enlace se puede abrir en otro navegador o dispositivo.
 pub async fn confirm_email_change(c: &mut Context) -> Result<(), ForgeError> {
@@ -594,7 +594,7 @@ pub async fn confirm_email_change(c: &mut Context) -> Result<(), ForgeError> {
     c.response_no_content()
 }
 
-/// `POST /api/users/email/revert` — body `{ "token" }` (el del enlace al email anterior).
+/// `POST /api/users/auth/email/revert` — body `{ "token" }` (el del enlace al email anterior).
 ///
 /// No exige sesión. Vuelve al email anterior y cierra todas las sesiones del
 /// usuario: si el cambio no lo hizo él, quien lo hizo pierde el acceso.
@@ -626,7 +626,7 @@ pub async fn revert_email(c: &mut Context) -> Result<(), ForgeError> {
     c.response_no_content()
 }
 
-/// `PUT /api/users/phone` — body `{ "phone", "password" }` (con código de país).
+/// `PUT /api/users/auth/phone` — body `{ "phone", "password" }` (con código de país).
 ///
 /// Exige sesión. Guarda el teléfono en `pending_phone` y envía un código por
 /// WhatsApp al teléfono nuevo. Responde el usuario de la sesión actualizado.
@@ -650,7 +650,7 @@ pub async fn change_phone(c: &mut Context) -> Result<(), ForgeError> {
     c.response_ok(&SessionUser::try_from(&user)?)
 }
 
-/// `POST /api/users/phone/confirm` — body `{ "code": "123456" }` (el que llegó al teléfono nuevo).
+/// `POST /api/users/auth/phone/confirm` — body `{ "code": "123456" }` (el que llegó al teléfono nuevo).
 ///
 /// Exige sesión: el código son 6 dígitos y solo es válido junto al usuario.
 /// Responde el usuario de la sesión actualizado.
@@ -700,7 +700,7 @@ pub async fn confirm_phone_change(c: &mut Context) -> Result<(), ForgeError> {
     c.response_ok(&SessionUser::try_from(&user)?)
 }
 
-/// `POST /api/users/phone/revert` — body `{ "token" }` (el del enlace al teléfono anterior).
+/// `POST /api/users/auth/phone/revert` — body `{ "token" }` (el del enlace al teléfono anterior).
 ///
 /// No exige sesión. Vuelve al teléfono anterior y cierra todas las sesiones del
 /// usuario: si el cambio no lo hizo él, quien lo hizo pierde el acceso.
@@ -736,11 +736,11 @@ pub async fn revert_phone(c: &mut Context) -> Result<(), ForgeError> {
 // App de autenticación (TOTP)
 // ===============================================================================
 
-/// `POST /api/users/totp` — body `{ "password" }`.
+/// `POST /api/users/auth/totp` — body `{ "password" }`.
 ///
 /// Exige sesión. Genera un secreto nuevo y responde `{ "secret", "url", "qr" }`
 /// para escanear el QR (o escribir el secreto) en la app de autenticación.
-/// Queda sin confirmar hasta `POST /api/users/totp/confirm`.
+/// Queda sin confirmar hasta `POST /api/users/auth/totp/confirm`.
 pub async fn setup_totp(c: &mut Context) -> Result<(), ForgeError> {
     let auth = c.auth::<SessionUser>().await?;
     let req = c.get_body::<PasswordValidator>().await?;
@@ -771,10 +771,10 @@ pub async fn setup_totp(c: &mut Context) -> Result<(), ForgeError> {
     }))
 }
 
-/// `POST /api/users/totp/confirm` — body `{ "code": "123456" }` (el que muestra la app).
+/// `POST /api/users/auth/totp/confirm` — body `{ "code": "123456" }` (el que muestra la app).
 ///
 /// Exige sesión. Confirma que la app quedó bien configurada; desde ahí se puede
-/// elegir `totp` en `PUT /api/users/two-factor`. Responde el usuario de la sesión actualizado.
+/// elegir `totp` en `PUT /api/users/auth/two-factor`. Responde el usuario de la sesión actualizado.
 pub async fn confirm_totp(c: &mut Context) -> Result<(), ForgeError> {
     let auth = c.auth::<SessionUser>().await?;
     let req = c.get_body::<CodeValidator>().await?;
@@ -798,19 +798,19 @@ pub async fn confirm_totp(c: &mut Context) -> Result<(), ForgeError> {
 // Sesión
 // ===============================================================================
 
-/// `GET /api/users/me` — usuario de la sesión actual (o 401).
+/// `GET /api/users/auth/me` — usuario de la sesión actual (o 401).
 pub async fn me(c: &mut Context) -> Result<(), ForgeError> {
     let auth = c.auth::<SessionUser>().await?;
     c.response_ok(&*auth.user)
 }
 
-/// `POST /api/users/logout` — cierra la sesión actual. Sin sesión no es error.
+/// `POST /api/users/auth/logout` — cierra la sesión actual. Sin sesión no es error.
 pub async fn logout(c: &mut Context) -> Result<(), ForgeError> {
     c.logout().await?;
     c.response_no_content()
 }
 
-/// `POST /api/users/logout/all` — cierra todas las sesiones del usuario, incluida la actual.
+/// `POST /api/users/auth/logout/all` — cierra todas las sesiones del usuario, incluida la actual.
 pub async fn logout_all(c: &mut Context) -> Result<(), ForgeError> {
     let auth = c.auth::<SessionUser>().await?;
     session()?.invalidate_user(auth.user_id).await?;
@@ -818,7 +818,7 @@ pub async fn logout_all(c: &mut Context) -> Result<(), ForgeError> {
     c.response_no_content()
 }
 
-/// `GET /api/users/sessions` — sesiones abiertas del usuario (dispositivos), la
+/// `GET /api/users/auth/sessions` — sesiones abiertas del usuario (dispositivos), la
 /// más activa primero. `current` marca la de este request.
 pub async fn sessions(c: &mut Context) -> Result<(), ForgeError> {
     let auth = c.auth::<SessionUser>().await?;
@@ -826,7 +826,7 @@ pub async fn sessions(c: &mut Context) -> Result<(), ForgeError> {
     c.response_ok(&list)
 }
 
-/// `DELETE /api/users/sessions/{id}` — cierra una sesión del usuario (el `id` de la lista).
+/// `DELETE /api/users/auth/sessions/{id}` — cierra una sesión del usuario (el `id` de la lista).
 pub async fn destroy_session(c: &mut Context) -> Result<(), ForgeError> {
     let auth = c.auth::<SessionUser>().await?;
     let id = ObjectId::parse_str(c.require_param("id")?)
@@ -848,7 +848,7 @@ const FORGOT_MAX_ACCOUNT: u32 = 3;
 const FORGOT_MAX_IP: u32 = 10;
 const FORGOT_WINDOW: Duration = Duration::from_secs(15 * 60);
 
-/// `PUT /api/users/password` — body `{ "current_password", "password" }`.
+/// `PUT /api/users/auth/password` — body `{ "current_password", "password" }`.
 ///
 /// Exige sesión. Cambia la contraseña, cierra las demás sesiones (la actual
 /// sigue abierta) y avisa por email.
@@ -877,7 +877,7 @@ pub async fn change_password(c: &mut Context) -> Result<(), ForgeError> {
     c.response_no_content()
 }
 
-/// `POST /api/users/password/forgot` — body `{ "user" }` (email o teléfono con código de país).
+/// `POST /api/users/auth/password/forgot` — body `{ "user" }` (email o teléfono con código de país).
 ///
 /// Con email envía un enlace; con teléfono, un código por WhatsApp. Responde
 /// `202` con `{ "method" }` exista o no la cuenta, para no revelarlo.
@@ -911,7 +911,7 @@ pub async fn forgot_password(c: &mut Context) -> Result<(), ForgeError> {
     c.response_accepted(&json!({ "method": method }))
 }
 
-/// `POST /api/users/password/reset` — body `{ "token", "password" }` (el del enlace del email).
+/// `POST /api/users/auth/password/reset` — body `{ "token", "password" }` (el del enlace del email).
 ///
 /// No exige sesión. Cambia la contraseña, marca el email como verificado (el
 /// enlace lo prueba) y cierra todas las sesiones.
@@ -933,7 +933,7 @@ pub async fn reset_password(c: &mut Context) -> Result<(), ForgeError> {
     c.response_no_content()
 }
 
-/// `POST /api/users/password/reset/code` — body `{ "phone", "code", "password" }`
+/// `POST /api/users/auth/password/reset/code` — body `{ "phone", "code", "password" }`
 /// (el código que llegó por WhatsApp).
 ///
 /// No exige sesión. Cambia la contraseña, marca el teléfono como verificado (el
@@ -995,7 +995,7 @@ async fn set_new_password(user: &mut User, password: String, verified_field: &st
 const RESEND_MAX: u32 = 3;
 const RESEND_WINDOW: Duration = Duration::from_secs(15 * 60);
 
-/// `POST /api/users/verify/email/resend` — exige sesión. Envía un enlace nuevo
+/// `POST /api/users/auth/verify/email/resend` — exige sesión. Envía un enlace nuevo
 /// (el anterior deja de servir).
 pub async fn resend_verify_email(c: &mut Context) -> Result<(), ForgeError> {
     let auth = c.auth::<SessionUser>().await?;
@@ -1012,7 +1012,7 @@ pub async fn resend_verify_email(c: &mut Context) -> Result<(), ForgeError> {
     c.response_no_content()
 }
 
-/// `POST /api/users/verify/phone/resend` — exige sesión. Envía un código nuevo
+/// `POST /api/users/auth/verify/phone/resend` — exige sesión. Envía un código nuevo
 /// por WhatsApp (el anterior deja de servir).
 pub async fn resend_verify_phone(c: &mut Context) -> Result<(), ForgeError> {
     let auth = c.auth::<SessionUser>().await?;
@@ -1033,7 +1033,7 @@ pub async fn resend_verify_phone(c: &mut Context) -> Result<(), ForgeError> {
 // Cancelar cambio pendiente
 // ===============================================================================
 
-/// `DELETE /api/users/email/pending` — exige sesión. Descarta el email nuevo sin
+/// `DELETE /api/users/auth/email/pending` — exige sesión. Descarta el email nuevo sin
 /// confirmar (su enlace deja de servir). Responde el usuario de la sesión actualizado.
 pub async fn cancel_email_change(c: &mut Context) -> Result<(), ForgeError> {
     let auth = c.auth::<SessionUser>().await?;
@@ -1046,7 +1046,7 @@ pub async fn cancel_email_change(c: &mut Context) -> Result<(), ForgeError> {
     c.response_ok(&SessionUser::try_from(&user)?)
 }
 
-/// `DELETE /api/users/phone/pending` — exige sesión. Descarta el teléfono nuevo
+/// `DELETE /api/users/auth/phone/pending` — exige sesión. Descarta el teléfono nuevo
 /// sin confirmar (su código deja de servir). Responde el usuario de la sesión actualizado.
 pub async fn cancel_phone_change(c: &mut Context) -> Result<(), ForgeError> {
     let auth = c.auth::<SessionUser>().await?;
@@ -1063,7 +1063,7 @@ pub async fn cancel_phone_change(c: &mut Context) -> Result<(), ForgeError> {
 // Eliminar cuenta
 // ===============================================================================
 
-/// `DELETE /api/users/me` — body `{ "password" }`.
+/// `DELETE /api/users/auth/me` — body `{ "password" }`.
 ///
 /// Exige sesión. Borrado lógico (`deleted_at`): la cuenta ya no puede iniciar
 /// sesión, se borran el segundo factor y los cambios pendientes, y se cierran

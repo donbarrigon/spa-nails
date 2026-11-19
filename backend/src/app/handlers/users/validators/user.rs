@@ -124,7 +124,7 @@ impl Validator for UserLoginValidator {
     }
 }
 
-/// Segundo paso del login: el `challenge` que devolvió `/users/login` y el
+/// Segundo paso del login: el `challenge` que devolvió `/api/users/auth/login` y el
 /// código de 6 dígitos que llegó por email o WhatsApp.
 #[derive(Serialize, Deserialize)]
 pub struct LoginTwoFactorValidator {

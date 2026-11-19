@@ -52,7 +52,7 @@ void main() {
   });
 
   test('sin segundo factor termina con la sesión', () async {
-    final bloc = _bloc({'/api/users/login': (_) => http.Response(jsonEncode(_user), 200)});
+    final bloc = _bloc({'/api/users/auth/login': (_) => http.Response(jsonEncode(_user), 200)});
     final state = await _send(bloc, LoginSubmitted(_form()));
 
     expect(state, isA<LoginDone>());
@@ -61,7 +61,7 @@ void main() {
 
   test('credenciales incorrectas muestran el error en español', () async {
     final bloc = _bloc({
-      '/api/users/login': (_) => http.Response('{"status":401,"message":"incorrect"}', 401),
+      '/api/users/auth/login': (_) => http.Response('{"status":401,"message":"incorrect"}', 401),
     });
     final state = await _send(bloc, LoginSubmitted(_form()));
 
@@ -74,11 +74,11 @@ void main() {
 
     setUp(() async {
       bloc = _bloc({
-        '/api/users/login': (_) => http.Response(
+        '/api/users/auth/login': (_) => http.Response(
               jsonEncode({'challenge': _challenge, 'method': 'whatsapp', 'expires_in': 600}),
               202,
             ),
-        '/api/users/login/two-factor': (r) => twoFactor(r),
+        '/api/users/auth/login/two-factor': (r) => twoFactor(r),
       });
       await _send(bloc, LoginSubmitted(_form()));
     });

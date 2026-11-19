@@ -20,7 +20,7 @@ final class TwoFactorRequired extends LoginResult {
   final TwoFactorChallenge challenge;
 }
 
-/// Rutas `/api/users/...` de la cuenta y la sesión.
+/// Rutas `/api/users/auth/...` de la cuenta y la sesión.
 ///
 /// Los métodos reciben el validador ya validado: solo envían su `toJson`.
 class UserApi {
@@ -30,19 +30,19 @@ class UserApi {
 
   /// `200` con el usuario, o `202` si pide segundo factor.
   Future<LoginResult> login(UserLoginValidator form) async =>
-      _loginResult(await _api.post('/api/users/login', form.toJson()));
+      _loginResult(await _api.post('/api/users/auth/login', form.toJson()));
 
   /// Igual que [login]. `404` si ese Google no tiene cuenta (debe registrarse) y
   /// `409` si su email ya tiene cuenta (debe entrar con contraseña y vincularlo).
   Future<LoginResult> googleLogin(GoogleLoginValidator form) async =>
-      _loginResult(await _api.post('/api/users/login/google', form.toJson()));
+      _loginResult(await _api.post('/api/users/auth/login/google', form.toJson()));
 
   Future<SessionUser> loginTwoFactor(LoginTwoFactorValidator form) async =>
-      _user(await _api.post('/api/users/login/two-factor', form.toJson()));
+      _user(await _api.post('/api/users/auth/login/two-factor', form.toJson()));
 
   /// Reenvía el código; con [method] cambia de canal.
   Future<TwoFactorChallenge> resendTwoFactor(String challenge, {TwoFactorMethod? method}) async {
-    final res = await _api.post('/api/users/login/two-factor/resend', {
+    final res = await _api.post('/api/users/auth/login/two-factor/resend', {
       'challenge': challenge,
       if (method != null) 'method': method.name,
     });
@@ -50,15 +50,15 @@ class UserApi {
   }
 
   Future<SessionUser> register(UserRegisterValidator form) async =>
-      _user(await _api.post('/api/users/register', form.toJson()));
+      _user(await _api.post('/api/users/auth/register', form.toJson()));
 
   Future<SessionUser> googleRegister(GoogleRegisterValidator form) async =>
-      _user(await _api.post('/api/users/register/google', form.toJson()));
+      _user(await _api.post('/api/users/auth/register/google', form.toJson()));
 
   /// Usuario de la sesión actual, o `null` si no hay sesión o venció.
   Future<SessionUser?> me() async {
     try {
-      return _user(await _api.get('/api/users/me'));
+      return _user(await _api.get('/api/users/auth/me'));
     } on ApiException catch (e) {
       if (e.status == 401) return null;
       rethrow;
@@ -66,7 +66,7 @@ class UserApi {
   }
 
   Future<void> logout() async {
-    await _api.post('/api/users/logout');
+    await _api.post('/api/users/auth/logout');
   }
 
   static LoginResult _loginResult(ApiResponse res) => res.status == 202
