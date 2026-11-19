@@ -1,0 +1,12 @@
+/* Inicio: tarjeta de invitado o de la sesión. */
+
+.guest-card { padding: 20px; display: grid; gap: 4px; }
+.guest-card__actions { display: grid; gap: 10px; margin-top: 16px; }
+
+.session-card { padding: 18px 20px 20px; }
+.session-card .info-panel__row { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); }
+
+@media (min-width: 600px) {
+  .guest-card__actions { display: flex; flex-wrap: wrap; gap: 12px; }
+  .guest-card__actions .app-button { width: auto; }
+}

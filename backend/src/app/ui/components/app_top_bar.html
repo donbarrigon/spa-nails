@@ -1,0 +1,13 @@
+{#- AppTopBar: con `show_menu` muestra la hamburguesa (solo cuando el menú es
+    desplegable: en escritorio está siempre visible). -#}
+{%- import "components/icon.html" as icon -%}
+{%- macro app_top_bar(title, show_menu=false) -%}
+<header class="app-top-bar">
+  {%- if show_menu %}
+  <button type="button" class="icon-button app-top-bar__menu" data-drawer-open aria-label="Menú" aria-controls="app-drawer" aria-expanded="false">
+    {%- call icon::icon("menu") -%}{% endcall %}
+  </button>
+  {%- endif %}
+  <h1 class="app-top-bar__title">{{ title }}</h1>
+</header>
+{%- endmacro -%}

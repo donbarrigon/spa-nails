@@ -26,6 +26,7 @@ void main() {
     AppDeps(
       api: api,
       userApi: userApi,
+      profileApi: ProfileApi(api),
       google: google,
       sessionStorage: storage,
       child: BlocProvider<SessionBloc>(

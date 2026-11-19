@@ -1,5 +1,5 @@
 name: spa_nails_web
-description: An absolute bare-bones web app.
+description: JS de la web (Dart compilado a JS) que acompaña las páginas de Askama del backend.
 publish_to: none
 version: 1.0.0
 # repository: https://github.com/my_org/my_repo

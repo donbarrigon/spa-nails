@@ -1,0 +1,27 @@
+{#- Menú lateral: secciones arriba y la cuenta abajo (AppDrawer en mobile). -#}
+{%- import "components/icon.html" as icon -%}
+{%- import "components/brand_mark.html" as brand_mark -%}
+{%- import "components/app_button.html" as app_button -%}
+<nav class="app-drawer" id="app-drawer" aria-label="Menú">
+  <div class="app-drawer__brand">{% call brand_mark::brand_mark(shell.brand_initials(), shell.app_name()) %}{% endcall %}</div>
+  {%- if let Some(user) = shell.user %}
+  <div class="app-drawer__user">
+    <span class="text-title-medium">{{ user.name }}</span>
+    <span class="text-body-small text-variant">{{ user.email }}</span>
+  </div>
+  {%- endif %}
+  <div class="app-drawer__nav">
+    <a class="nav-tile" href="/"{% if shell.is(Section::Home) %} aria-current="page"{% endif %}>{% call icon::icon("home") %}{% endcall %}<span>Inicio</span></a>
+    {%- if shell.user.is_some() %}
+    <a class="nav-tile" href="/profile"{% if shell.is(Section::Profile) %} aria-current="page"{% endif %}>{% call icon::icon("person") %}{% endcall %}<span>Mi perfil</span></a>
+    {%- endif %}
+  </div>
+  <div class="app-drawer__account">
+    {%- if shell.user.is_some() %}
+    {% call app_button::app_button("Cerrar sesión", variant="outlined", kind="button", icon="logout", action="logout") %}{% endcall %}
+    {%- else %}
+    {% call app_button::app_button("Iniciar sesión", variant="outlined", href="/login") %}{% endcall %}
+    {% call app_button::app_button("Crear cuenta", variant="text", href="/register") %}{% endcall %}
+    {%- endif %}
+  </div>
+</nav>

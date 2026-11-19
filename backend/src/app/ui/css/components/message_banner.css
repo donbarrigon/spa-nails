@@ -1,0 +1,14 @@
+/* MessageBanner: mensaje en línea, de error o informativo. */
+
+.message-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--error-container);
+  color: var(--on-error-container);
+}
+.message-banner .icon { width: 20px; height: 20px; margin-top: 1px; }
+.message-banner__text { flex: 1; }
+.message-banner--info { background: var(--secondary-container); color: var(--on-secondary-container); }

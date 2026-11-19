@@ -1,0 +1,3 @@
+El backend todavía no revisa el token CSRF. Las páginas lo ponen en <meta name="csrf-token"> y el JS lo manda en x-csrf-token, pero falta el middleware que lo valide. Hasta entonces, la web no tiene protección contra CSRF.
+La pestaña "Autenticación" del perfil es solo de lectura en la web. Muestra un aviso de que los cambios de correo, teléfono, contraseña y verificación en dos pasos se hacen en la app.
+El usuario de prueba quedó en la base. Lo borré con DELETE /api/users/auth/me, pero ese borrado es lógico (deleted_at), así que el registro de prueba.web@example.com sigue en Mongo. Bórralo a mano si quieres dejar la base limpia.

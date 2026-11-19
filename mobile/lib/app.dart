@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:shared/shared.dart';
 
 import 'core/bloc/bloc_provider.dart';
 import 'core/bloc/bloc_widgets.dart';
@@ -37,12 +38,28 @@ class _AppState extends State<App> {
     }
   }
 
+  /// El tema elegido en las preferencias; sin sesión o sin elegir, el del dispositivo.
+  static ThemeMode _themeMode(SessionState state) => switch (state) {
+        SessionActive(:final user) => switch (user.theme) {
+            ThemePreference.light => ThemeMode.light,
+            ThemePreference.dark => ThemeMode.dark,
+            null => ThemeMode.system,
+          },
+        _ => ThemeMode.system,
+      };
+
   @override
-  Widget build(BuildContext context) => MaterialApp(
+  Widget build(BuildContext context) => BlocBuilder<SessionState>(
+        bloc: _session,
+        builder: (context, state) => _app(_themeMode(state)),
+      );
+
+  Widget _app(ThemeMode themeMode) => MaterialApp(
         title: AppConfig.appName,
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
+        themeMode: themeMode,
         locale: const Locale('es'),
         supportedLocales: const [Locale('es')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,

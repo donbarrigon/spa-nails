@@ -1,0 +1,33 @@
+{#- Autenticación. En la web, por ahora, solo se consulta: los cambios de
+    correo, teléfono, contraseña y verificación en dos pasos se hacen en la app. -#}
+{%- extends "pages/profile/profile_layout.html" -%}
+{%- import "components/page_body.html" as page_body -%}
+{%- import "components/info_panel.html" as info_panel -%}
+{%- import "components/message_banner.html" as message_banner -%}
+{%- import "pages/profile/account_labels.html" as account_labels -%}
+{%- block content %}
+{%- if let Some(user) = shell.user %}
+{% call page_body::page_body() %}
+  {% call message_banner::message_banner("Por ahora, para cambiar tu correo, teléfono, contraseña o la verificación en dos pasos, usa la app.", tone="info") %}{% endcall %}
+  {% call info_panel::info_panel("Correo", icon="person") %}
+    {% call info_panel::info_row("Correo") %}{{ user.email }}{% endcall %}
+    {% call info_panel::info_row("Estado") %}{% call account_labels::verified(user.email_verified) %}{% endcall %}{% endcall %}
+    {%- if let Some(email) = user.pending_email %}
+    {% call info_panel::info_row("Por confirmar") %}{{ email }}{% endcall %}
+    {%- endif %}
+  {% endcall %}
+  {% call info_panel::info_panel("Teléfono", icon="person") %}
+    {% call info_panel::info_row("Teléfono") %}{{ user.phone }}{% endcall %}
+    {% call info_panel::info_row("Estado") %}{% call account_labels::verified(user.phone_verified) %}{% endcall %}{% endcall %}
+    {%- if let Some(phone) = user.pending_phone %}
+    {% call info_panel::info_row("Por confirmar") %}{{ phone }}{% endcall %}
+    {%- endif %}
+  {% endcall %}
+  {% call info_panel::info_panel("Seguridad", icon="lock") %}
+    {% call info_panel::info_row("Verificación en dos pasos") %}{% call account_labels::two_factor(user.two_factor_label()) %}{% endcall %}{% endcall %}
+    {% call info_panel::info_row("App de autenticación") %}{% call account_labels::totp(user.totp_confirmed) %}{% endcall %}{% endcall %}
+    {% call info_panel::info_row("Google") %}{% call account_labels::google(user.google_linked) %}{% endcall %}{% endcall %}
+  {% endcall %}
+{% endcall %}
+{%- endif %}
+{%- endblock %}

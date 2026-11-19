@@ -1,0 +1,4 @@
+{#- StatusChip: tone = "success", "warning", "neutral" o "error". -#}
+{%- macro status_chip(label, tone) -%}
+<span class="status-chip status-chip--{{ tone }}"><span class="status-chip__label">{{ label }}</span></span>
+{%- endmacro -%}

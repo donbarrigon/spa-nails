@@ -2,7 +2,7 @@ import '../models/two_factor.dart';
 import 'rules.dart';
 import 'validator.dart';
 
-// Espejo de `backend/src/app/handler/validators/user.rs`: mismos nombres, campos
+// Espejo de `backend/src/app/handlers/users/validators/user.rs`: mismos nombres, campos
 // y reglas. Si una regla cambia allá, cambia acá.
 
 /// `POST /api/users/auth/login` — `user` es el email o el teléfono con código de país.
@@ -221,4 +221,134 @@ void _profileRules(
   e.check('password', password.isNotEmpty, 'Elige una contraseña');
   e.check('password', Rules.length(password) >= 8, 'Usa al menos 8 caracteres');
   e.check('password', Rules.length(password) <= 32, 'Usa máximo 32 caracteres');
+}
+
+// ===============================================================================
+// Cuenta (con sesión)
+// ===============================================================================
+
+/// `PUT /api/users/auth/email` — el correo nuevo queda pendiente hasta confirmarlo.
+final class ChangeEmailValidator extends Validator {
+  ChangeEmailValidator({required this.email, required this.password});
+
+  String email;
+  String password;
+
+  @override
+  void prepareForValidation() => email = email.trim().toLowerCase();
+
+  @override
+  Map<String, String> validate() {
+    final e = FieldErrors();
+    e.check('email', email.isNotEmpty, 'Escribe el correo nuevo');
+    e.check('email', Rules.isEmail(email), 'Escribe un correo válido');
+    e.check('password', password.isNotEmpty, 'Escribe tu contraseña');
+    return e.errors;
+  }
+
+  @override
+  Map<String, Object?> toJson() => {'email': email, 'password': password};
+}
+
+/// `PUT /api/users/auth/phone` — el teléfono nuevo queda pendiente hasta
+/// confirmarlo con el código que llega por WhatsApp.
+final class ChangePhoneValidator extends Validator {
+  ChangePhoneValidator({required this.phone, required this.password});
+
+  String phone;
+  String password;
+
+  @override
+  void prepareForValidation() => phone = Rules.normalizePhone(phone);
+
+  @override
+  Map<String, String> validate() {
+    final e = FieldErrors();
+    e.check('phone', phone.isNotEmpty, 'Escribe el teléfono nuevo');
+    e.check('phone', Rules.isPhoneCode(phone), 'Incluye el código de país, ej. +57 300 123 4567');
+    e.check('phone', Rules.knownPhoneCode(phone), 'El código de país no existe');
+    e.check('password', password.isNotEmpty, 'Escribe tu contraseña');
+    return e.errors;
+  }
+
+  @override
+  Map<String, Object?> toJson() => {'phone': phone, 'password': password};
+}
+
+/// `PUT /api/users/auth/password`.
+final class ChangePasswordValidator extends Validator {
+  ChangePasswordValidator({required this.currentPassword, required this.password});
+
+  String currentPassword;
+  String password;
+
+  @override
+  Map<String, String> validate() {
+    final e = FieldErrors();
+    e.check('current_password', currentPassword.isNotEmpty, 'Escribe tu contraseña actual');
+    e.check('password', password.isNotEmpty, 'Elige una contraseña nueva');
+    e.check('password', Rules.length(password) >= 8, 'Usa al menos 8 caracteres');
+    e.check('password', Rules.length(password) <= 32, 'Usa máximo 32 caracteres');
+    return e.errors;
+  }
+
+  @override
+  Map<String, Object?> toJson() => {'current_password': currentPassword, 'password': password};
+}
+
+/// Solo la contraseña, para confirmar una acción sensible (desactivar la
+/// verificación en dos pasos, configurar la app de autenticación).
+final class PasswordValidator extends Validator {
+  PasswordValidator({required this.password});
+
+  String password;
+
+  @override
+  Map<String, String> validate() {
+    final e = FieldErrors();
+    e.check('password', password.isNotEmpty, 'Escribe tu contraseña');
+    return e.errors;
+  }
+
+  @override
+  Map<String, Object?> toJson() => {'password': password};
+}
+
+/// `PUT /api/users/auth/two-factor` — activa o cambia el método.
+final class TwoFactorValidator extends Validator {
+  TwoFactorValidator({required this.method, required this.password});
+
+  TwoFactorMethod method;
+  String password;
+
+  @override
+  Map<String, String> validate() {
+    final e = FieldErrors();
+    e.check('password', password.isNotEmpty, 'Escribe tu contraseña');
+    return e.errors;
+  }
+
+  @override
+  Map<String, Object?> toJson() => {'method': method.name, 'password': password};
+}
+
+/// Código de 6 dígitos que llegó por WhatsApp o que muestra la app de autenticación.
+final class CodeValidator extends Validator {
+  CodeValidator({required this.code});
+
+  String code;
+
+  @override
+  void prepareForValidation() => code = code.replaceAll(RegExp(r'\s'), '');
+
+  @override
+  Map<String, String> validate() {
+    final e = FieldErrors();
+    e.check('code', code.isNotEmpty, 'Escribe el código');
+    e.check('code', Rules.isCode(code), 'El código tiene 6 dígitos');
+    return e.errors;
+  }
+
+  @override
+  Map<String, Object?> toJson() => {'code': code};
 }

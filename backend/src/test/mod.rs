@@ -1,10 +1,11 @@
 //! Tests de la API pública, uno por archivo: `<módulo>_<archivo>.rs`
-//! (ej. `app/data/models/user.rs` → `app_data_models_user.rs`).
+//! (ej. `app/shared/models/user.rs` → `app_shared_models_user.rs`).
 //! Los tests de funciones privadas van en su propio archivo (`#[cfg(test)] mod tests`).
 
-mod app_data_models_user;
-mod app_services_google;
-mod app_services_totp;
+mod app_shared_models_user;
+mod app_handlers_users_validators_profile;
+mod app_shared_services_google;
+mod app_shared_services_totp;
 
 /// Carga `env.json` una sola vez para los tests que lo necesitan (ej. `ForgeError`
 /// o lo que use `app.key`). `cargo test` corre desde `backend/`, donde está el archivo.

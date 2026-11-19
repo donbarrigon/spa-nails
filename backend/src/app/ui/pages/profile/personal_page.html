@@ -1,0 +1,28 @@
+{#- Datos personales. La foto y la portada todavía no se pueden cambiar. -#}
+{%- extends "pages/profile/profile_layout.html" -%}
+{%- import "components/page_body.html" as page_body -%}
+{%- import "components/app_text_field.html" as app_text_field -%}
+{%- import "components/app_button.html" as app_button -%}
+{%- import "components/message_banner.html" as message_banner -%}
+{%- block content %}
+{%- if let Some(user) = shell.user %}
+<form id="personal-form" novalidate>
+{% call page_body::page_body(spacing=14) %}
+  {% call app_text_field::app_text_field("name", "Nombre completo", value=user.name, autocomplete="name") %}{% endcall %}
+  {% call app_text_field::app_text_field("nickname", "Nombre de usuario", value=user.nickname, autocomplete="username") %}{% endcall %}
+  {% call app_text_field::app_text_field("birthdate", "Fecha de nacimiento", value=user.birthdate_iso, kind="date", helper="Opcional") %}{% endcall %}
+  {% call app_text_field::app_select("document_type", "Tipo de documento") %}
+    <option value=""{% if user.document_type.is_empty() %} selected{% endif %}>Sin documento</option>
+    {%- for (code, label) in document_types %}
+    <option value="{{ code }}"{% if user.document_type == *code %} selected{% endif %}>{{ label }}</option>
+    {%- endfor %}
+  {% endcall %}
+  {% call app_text_field::app_text_field("document", "Número de documento", value=user.document_number, disabled=user.document_type.is_empty()) %}{% endcall %}
+  {% call app_text_field::app_text_field("address", "Dirección", value=user.address, hint="Opcional", maxlength=120, autocomplete="street-address") %}{% endcall %}
+  {% call app_text_field::app_text_field("city", "Ciudad", value=user.city, hint="Opcional", maxlength=60, autocomplete="address-level2") %}{% endcall %}
+  {% call message_banner::message_banner(id="personal-error") %}{% endcall %}
+  {% call app_button::app_button("Guardar cambios") %}{% endcall %}
+{% endcall %}
+</form>
+{%- endif %}
+{%- endblock %}

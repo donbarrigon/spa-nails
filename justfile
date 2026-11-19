@@ -2,9 +2,9 @@
 dev:
     cargo run -p spa-nails
 
-# Compila el frontend web a JS dentro de los estáticos del backend
+# Estáticos de la web en backend/public/resources: CSS minificado, JS de Dart y fuentes
 build-web:
-    dart compile js -O2 -o backend/static/js/main.js web/web/main.dart
+    ./build_web.sh
 
 build: build-web
     cargo build --release

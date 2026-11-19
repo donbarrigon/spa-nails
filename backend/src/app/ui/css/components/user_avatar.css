@@ -1,0 +1,14 @@
+/* UserAvatar: círculo con las iniciales del nombre. */
+
+.user-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: var(--avatar-size, 56px);
+  height: var(--avatar-size, 56px);
+  border-radius: 50%;
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+  font-size: calc(var(--avatar-size, 56px) * 0.36);
+  font-weight: 600;
+}

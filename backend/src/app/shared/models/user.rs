@@ -13,7 +13,7 @@ use tokio::sync::{OnceCell, Semaphore};
 
 use crate::app::{
     handlers::users::validators::user::{GoogleRegisterValidator, UserRegisterValidator},
-    services::google::GoogleIdentity,
+    shared::services::google::GoogleIdentity,
 };
 
 // ===============================================================================
@@ -116,6 +116,28 @@ pub enum DocumentType {
     Ppt,
     /// Número de identificación tributaria
     Nit,
+}
+
+impl DocumentType {
+    /// Como se guarda: `"CC"`, `"NIT"`...
+    pub const fn code(self) -> &'static str {
+        match self {
+            Self::Cc => "CC",
+            Self::Ce => "CE",
+            Self::Ti => "TI",
+            Self::Pp => "PP",
+            Self::Ppt => "PPT",
+            Self::Nit => "NIT",
+        }
+    }
+}
+
+/// Tema de la app elegido en las preferencias (`profile.preferences.theme`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Theme {
+    Light,
+    Dark,
 }
 
 /// De dónde sale el código del segundo factor. Se guarda como "email", "whatsapp" o "totp".

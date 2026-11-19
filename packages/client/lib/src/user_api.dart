@@ -69,6 +69,63 @@ class UserApi {
     await _api.post('/api/users/auth/logout');
   }
 
+  // == Cuenta (con sesión) ====================================================
+  // Las que cambian algo responden el usuario actualizado. `403` si la
+  // contraseña no es correcta.
+
+  /// El correo nuevo queda en `pendingEmail` hasta que abra el enlace que le llega.
+  /// `409` si ya es de otra cuenta.
+  Future<SessionUser> changeEmail(ChangeEmailValidator form) async =>
+      _user(await _api.put('/api/users/auth/email', form.toJson()));
+
+  Future<SessionUser> cancelEmailChange() async =>
+      _user(await _api.delete('/api/users/auth/email/pending'));
+
+  Future<void> resendVerifyEmail() async {
+    await _api.post('/api/users/auth/verify/email/resend');
+  }
+
+  /// El teléfono nuevo queda en `pendingPhone` hasta [confirmPhoneChange].
+  /// `409` si ya es de otra cuenta.
+  Future<SessionUser> changePhone(ChangePhoneValidator form) async =>
+      _user(await _api.put('/api/users/auth/phone', form.toJson()));
+
+  /// Con el código que llegó al teléfono nuevo.
+  Future<SessionUser> confirmPhoneChange(CodeValidator form) async =>
+      _user(await _api.post('/api/users/auth/phone/confirm', form.toJson()));
+
+  Future<SessionUser> cancelPhoneChange() async =>
+      _user(await _api.delete('/api/users/auth/phone/pending'));
+
+  /// Con el código que llegó por WhatsApp al teléfono actual.
+  Future<SessionUser> verifyPhone(CodeValidator form) async =>
+      _user(await _api.post('/api/users/auth/verify/phone', form.toJson()));
+
+  Future<void> resendVerifyPhone() async {
+    await _api.post('/api/users/auth/verify/phone/resend');
+  }
+
+  /// Cierra las demás sesiones; la actual sigue abierta.
+  Future<void> changePassword(ChangePasswordValidator form) async {
+    await _api.put('/api/users/auth/password', form.toJson());
+  }
+
+  /// `422` si el método no está verificado o la app no está confirmada.
+  Future<SessionUser> updateTwoFactor(TwoFactorValidator form) async =>
+      _user(await _api.put('/api/users/auth/two-factor', form.toJson()));
+
+  /// También borra la app de autenticación.
+  Future<SessionUser> disableTwoFactor(PasswordValidator form) async =>
+      _user(await _api.delete('/api/users/auth/two-factor', form.toJson()));
+
+  /// Secreto nuevo para la app; sirve después de [confirmTotp].
+  /// `409` si la app es el método actual.
+  Future<TotpSetup> setupTotp(PasswordValidator form) async =>
+      TotpSetup.fromJson((await _api.post('/api/users/auth/totp', form.toJson())).json);
+
+  Future<SessionUser> confirmTotp(CodeValidator form) async =>
+      _user(await _api.post('/api/users/auth/totp/confirm', form.toJson()));
+
   static LoginResult _loginResult(ApiResponse res) => res.status == 202
       ? TwoFactorRequired(TwoFactorChallenge.fromJson(res.json))
       : LoggedIn(SessionUser.fromJson(res.json));

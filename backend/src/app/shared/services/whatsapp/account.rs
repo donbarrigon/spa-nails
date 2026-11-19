@@ -11,9 +11,9 @@ use mongodb::bson::oid::ObjectId;
 use serde_json::json;
 
 use super::{send_otp, send_phone_changed};
-use crate::app::services::mailer::account::REVERT_CHANGE_DAYS;
+use crate::app::shared::services::mailer::account::REVERT_CHANGE_DAYS;
 use crate::app::handlers::users::validators::phone_codes::PHONE_CODES;
-use crate::app::data::models::{
+use crate::app::shared::models::{
     token::{Token, TokenType},
     user::User,
 };

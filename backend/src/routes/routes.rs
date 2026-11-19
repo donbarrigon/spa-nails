@@ -1,41 +1,66 @@
+use ironforge::handler::resources;
+use ironforge::middleware::rate_limit;
 use ironforge::server::Router;
 
-use crate::app::handlers::users::controllers::auth;
+use crate::app::handlers::home::controllers::home;
+use crate::app::handlers::users::controllers::{auth, auth_page, profile, profile_page};
 
 pub fn app_routes() -> Router {
     Router::build("app", |r| {
+        // Web: páginas HTML (Askama) y sus estáticos (public/resources).
+        r.get("/", home::home);
+        r.get("/login", auth_page::login_page);
+        r.get("/register", auth_page::register_page);
+        r.prefix("/profile", |r| {
+            r.get("/", profile_page::overview);
+            r.get("/account", profile_page::account);
+            r.get("/personal", profile_page::personal);
+            r.get("/preferences", profile_page::preferences);
+        });
+        r.get("/resources/*", resources::serve);
+
         r.prefix("/api", |r| {
-            r.prefix("/users/auth", |r| {
+            // Rutas que hashean o verifican contraseñas con argon2 (caras en CPU/RAM).
+            r.group("/users/auth", rate_limit(4, 60), |r| {
                 r.post("/register", auth::register);
+                r.post("/register/google", auth::google_register);
                 r.post("/login", auth::login);
+                r.put("/password", auth::change_password);
+                r.post("/password/reset", auth::reset_password);
+                r.post("/password/reset/code", auth::reset_password_code);
+                r.put("/two-factor", auth::update_two_factor);
+                r.delete("/two-factor", auth::disable_two_factor);
+                r.post("/totp", auth::setup_totp);
+                r.post("/google", auth::link_google);
+                r.delete("/google", auth::unlink_google);
+                r.put("/email", auth::change_email);
+                r.put("/phone", auth::change_phone);
+                r.delete("/me", auth::delete_account);
+            });
+
+            // Resto de rutas de usuarios. Un solo límite compartido entre los dos grupos.
+            let users = rate_limit(30, 60);
+            r.group("/users/profile", users.clone(), |r| {
+                r.put("/", profile::update);
+                r.put("/preferences", profile::update_preferences);
+            });
+            r.group("/users/auth", users, |r| {
                 r.post("/login/two-factor", auth::login_two_factor);
                 r.post("/login/two-factor/resend", auth::resend_two_factor);
                 r.post("/login/google", auth::google_login);
-                r.post("/register/google", auth::google_register);
-                r.post("/google", auth::link_google);
-                r.delete("/google", auth::unlink_google);
                 r.post("/logout", auth::logout);
                 r.post("/logout/all", auth::logout_all);
                 r.get("/me", auth::me);
-                r.delete("/me", auth::delete_account);
                 r.get("/sessions", auth::sessions);
                 r.delete("/sessions/{id}", auth::destroy_session);
-                r.put("/password", auth::change_password);
                 r.post("/password/forgot", auth::forgot_password);
-                r.post("/password/reset", auth::reset_password);
-                r.post("/password/reset/code", auth::reset_password_code);
                 r.post("/verify/email/resend", auth::resend_verify_email);
                 r.post("/verify/phone/resend", auth::resend_verify_phone);
                 r.delete("/email/pending", auth::cancel_email_change);
                 r.delete("/phone/pending", auth::cancel_phone_change);
-                r.put("/two-factor", auth::update_two_factor);
-                r.delete("/two-factor", auth::disable_two_factor);
-                r.post("/totp", auth::setup_totp);
                 r.post("/totp/confirm", auth::confirm_totp);
-                r.put("/email", auth::change_email);
                 r.post("/email/confirm", auth::confirm_email_change);
                 r.post("/email/revert", auth::revert_email);
-                r.put("/phone", auth::change_phone);
                 r.post("/phone/confirm", auth::confirm_phone_change);
                 r.post("/phone/revert", auth::revert_phone);
                 r.post("/verify/email", auth::verify_email);

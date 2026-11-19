@@ -1,0 +1,16 @@
+{#- AppButton: variant = "primary" (uno por pantalla), "outlined" o "text".
+    Con `href` es un enlace; si no, un botón (`kind` = submit / button). -#}
+{%- import "components/icon.html" as icon -%}
+{%- macro app_button(label, variant="primary", href="", kind="submit", icon="", id="", action="", expand=true) -%}
+{%- if href.is_empty() -%}
+<button type="{{ kind }}" class="app-button{% if variant != "primary" %} app-button--{{ variant }}{% endif %}{% if !expand %} app-button--inline{% endif %}"{% if !id.is_empty() %} id="{{ id }}"{% endif %}{% if !action.is_empty() %} data-action="{{ action }}"{% endif %}>
+  {%- if !icon.is_empty() %}{% call icon::icon(icon) %}{% endcall %}{% endif -%}
+  <span>{{ label }}</span>
+</button>
+{%- else -%}
+<a href="{{ href }}" class="app-button{% if variant != "primary" %} app-button--{{ variant }}{% endif %}{% if !expand %} app-button--inline{% endif %}"{% if !id.is_empty() %} id="{{ id }}"{% endif %}>
+  {%- if !icon.is_empty() %}{% call icon::icon(icon) %}{% endcall %}{% endif -%}
+  <span>{{ label }}</span>
+</a>
+{%- endif -%}
+{%- endmacro -%}

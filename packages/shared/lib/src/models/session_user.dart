@@ -1,4 +1,5 @@
 import 'bson.dart';
+import 'profile.dart';
 import 'two_factor.dart';
 
 /// Usuario de la sesión, tal como lo responde el backend (`SessionUser`).
@@ -9,6 +10,13 @@ final class SessionUser {
     required this.nickname,
     required this.name,
     required this.avatar,
+    this.banner = '',
+    this.birthdate,
+    this.documentType,
+    this.document,
+    this.address,
+    this.city,
+    this.preferences = const {},
     required this.email,
     required this.phone,
     this.pendingEmail,
@@ -29,6 +37,18 @@ final class SessionUser {
   final String nickname;
   final String name;
   final String avatar;
+  final String banner;
+
+  /// Medianoche UTC del día de nacimiento: leer con `.toUtc()`, no `.toLocal()`.
+  final DateTime? birthdate;
+  final DocumentType? documentType;
+  final String? document;
+  final String? address;
+  final String? city;
+
+  /// `profile.preferences` del backend, ej. `{"theme": "dark"}`.
+  final Map<String, Object?> preferences;
+
   final String email;
 
   /// Con código de país, ej. `+573001234567`.
@@ -54,11 +74,24 @@ final class SessionUser {
   bool get emailVerified => emailVerifiedAt != null;
   bool get phoneVerified => phoneVerifiedAt != null;
 
+  /// `null` si no eligió: sigue el tema del dispositivo.
+  ThemePreference? get theme => ThemePreference.tryParse(preferences['theme']);
+
   factory SessionUser.fromJson(Map<String, Object?> json) => SessionUser(
         id: readId(json['id']),
         nickname: json['nickname'] as String,
         name: json['name'] as String,
         avatar: json['avatar'] as String? ?? '',
+        banner: json['banner'] as String? ?? '',
+        birthdate: readDateOrNull(json['birthdate']),
+        documentType: DocumentType.tryParse(json['document_type']),
+        document: json['document'] as String?,
+        address: json['address'] as String?,
+        city: json['city'] as String?,
+        preferences: switch (json['preferences']) {
+          final Map<String, Object?> map => map,
+          _ => const {},
+        },
         email: json['email'] as String,
         phone: json['phone'] as String,
         pendingEmail: json['pending_email'] as String?,

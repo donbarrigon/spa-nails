@@ -1,0 +1,10 @@
+/* PageBody: contenido centrado con ancho máximo y margen lateral según la ventana. */
+
+.page-body {
+  display: grid;
+  gap: var(--page-spacing, 16px);
+  width: 100%;
+  max-width: calc(var(--page-max, 720px) + 2 * var(--gutter));
+  margin: 0 auto;
+  padding: 8px var(--gutter) 32px;
+}

@@ -1,0 +1,11 @@
+{#- Marco de la app con el menú lateral (AppShell en mobile). -#}
+{%- extends "shell/base.html" -%}
+{%- block body %}
+<div class="app-shell">
+  {% include "shell/app_drawer.html" %}
+  <div class="app-drawer__scrim" data-drawer-close></div>
+  <div class="app-shell__main">
+    {%- block main %}{% endblock %}
+  </div>
+</div>
+{%- endblock %}

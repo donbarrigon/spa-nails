@@ -1,0 +1,30 @@
+{#- Registro con correo. (Con Google, cuando la web tenga el botón.) -#}
+{%- extends "pages/auth/auth_layout.html" -%}
+{%- import "components/icon.html" as icon -%}
+{%- import "components/app_text_field.html" as app_text_field -%}
+{%- import "components/app_button.html" as app_button -%}
+{%- import "components/message_banner.html" as message_banner -%}
+{%- import "pages/auth/remember_me.html" as remember_me -%}
+{%- block form %}
+<form class="auth-form" id="register-form" novalidate>
+  <a class="icon-button auth-form__back" href="/" aria-label="Volver">{% call icon::icon("arrow_back") %}{% endcall %}</a>
+  <h1 class="text-headline-large">Crea tu cuenta</h1>
+  <p class="auth-form__intro text-variant">Con tu cuenta puedes reservar y ver tus citas.</p>
+  <div class="auth-form__lead">
+    {% call app_text_field::app_text_field("name", "Nombre completo", autocomplete="name", autofocus=true) %}{% endcall %}
+  </div>
+  {% call app_text_field::app_text_field("nickname", "Nombre de usuario", hint="ej. ana.perez", autocomplete="username") %}{% endcall %}
+  {% call app_text_field::app_text_field("email", "Correo", kind="email", autocomplete="email", inputmode="email") %}{% endcall %}
+  {% call app_text_field::app_text_field("phone", "Teléfono", kind="tel", hint="+57 300 123 4567", helper="Con el código de país. Te enviaremos un código por WhatsApp para verificarlo.", autocomplete="tel", inputmode="tel") %}{% endcall %}
+  {% call app_text_field::app_text_field("password", "Contraseña", helper="De 8 a 32 caracteres.", password=true, autocomplete="new-password") %}{% endcall %}
+  {% call remember_me::remember_me() %}{% endcall %}
+  {% call message_banner::message_banner(id="register-error") %}{% endcall %}
+  <div class="auth-form__actions">
+    {% call app_button::app_button("Crear cuenta") %}{% endcall %}
+  </div>
+  <p class="auth-form__switch">
+    <span>¿Ya tienes cuenta?</span>
+    {% call app_button::app_button("Inicia sesión", variant="text", href="/login") %}{% endcall %}
+  </p>
+</form>
+{%- endblock %}

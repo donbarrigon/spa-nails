@@ -4,7 +4,6 @@ import 'package:shared/shared.dart';
 
 import '../../../core/bloc/bloc.dart';
 import '../../../core/google_auth.dart';
-import '../auth_errors.dart';
 import 'register_event.dart';
 import 'register_state.dart';
 

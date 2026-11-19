@@ -1,6 +1,6 @@
 use serde_json::{Value, json};
 
-use crate::app::data::models::user::Profile;
+use crate::app::shared::models::user::Profile;
 
 fn profile(preferences: Value) -> Profile {
     Profile {

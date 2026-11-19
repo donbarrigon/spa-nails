@@ -1,0 +1,24 @@
+{#- Marco de login y registro (AuthLayout en mobile): celular a pantalla
+    completa, tablet en tarjeta, escritorio con el panel de marca. -#}
+{%- extends "shell/base.html" -%}
+{%- import "components/brand_mark.html" as brand_mark -%}
+{%- block styles %}
+  <link rel="stylesheet" href="/resources/css/auth.css">
+{%- endblock %}
+{%- block scripts %}
+  <script defer src="/resources/js/auth.js"></script>
+{%- endblock %}
+{%- block body %}
+<div class="auth-layout">
+  <aside class="auth-layout__brand">
+    {% call brand_mark::brand_mark(shell.brand_initials(), shell.app_name(), size=56, show_name=false, on_pastel=true) %}{% endcall %}
+    <div class="auth-layout__brand-text">
+      <p class="text-display-medium">{{ shell.app_name() }}</p>
+      <p class="text-body-large">Reserva tus citas y consulta tus servicios desde cualquier dispositivo.</p>
+    </div>
+  </aside>
+  <main class="auth-layout__form">
+    {%- block form %}{% endblock %}
+  </main>
+</div>
+{%- endblock %}

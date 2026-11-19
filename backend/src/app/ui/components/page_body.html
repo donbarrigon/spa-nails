@@ -1,0 +1,4 @@
+{#- PageBody: contenido centrado con ancho máximo (720) y margen según la ventana. -#}
+{%- macro page_body(max_width=720, spacing=16) -%}
+<div class="page-body" style="--page-max: {{ max_width }}px; --page-spacing: {{ spacing }}px">{{ caller() }}</div>
+{%- endmacro -%}

@@ -1,0 +1,90 @@
+/* Login y registro (auth_layout, remember_me, two_factor_step).
+   Celular: formulario a pantalla completa. Tablet: en una tarjeta centrada.
+   Escritorio: panel de marca a la izquierda y formulario a la derecha. */
+
+.auth-layout { min-height: 100vh; display: grid; }
+
+.auth-layout__form {
+  display: grid;
+  align-content: center;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 16px 20px 24px;
+}
+
+.auth-layout__brand { display: none; }
+
+.auth-form { display: grid; }
+.auth-form > * + * { margin-top: 14px; }
+.auth-form .auth-form__intro { margin-top: 6px; }
+.auth-form .auth-form__lead { margin-top: 24px; }
+.auth-form .auth-form__brand { margin-bottom: 14px; }
+.auth-form__actions { display: grid; gap: 16px; margin-top: 16px !important; }
+.auth-form__switch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px !important;
+}
+.auth-form__back { justify-self: start; margin-left: -12px; }
+.auth-form__links { display: flex; flex-wrap: wrap; justify-content: center; }
+
+.remember-me {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  justify-self: start;
+  min-height: 48px;
+  padding-right: 8px;
+  margin-top: 4px !important;
+  cursor: pointer;
+}
+.remember-me input {
+  width: 18px;
+  height: 18px;
+  margin: 0 0 0 11px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.or-divider { display: flex; align-items: center; gap: 12px; color: var(--on-surface-variant); font-size: 13px; }
+.or-divider::before, .or-divider::after { content: ""; flex: 1; height: 1px; background: var(--outline-variant); }
+
+@media (min-width: 600px) {
+  .auth-layout { background: var(--surface-container-low); padding: 24px; }
+  .auth-layout__form {
+    max-width: 480px;
+    padding: 32px;
+    align-self: center;
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: var(--card-radius);
+  }
+}
+
+@media (min-width: 840px) {
+  .auth-layout {
+    grid-template-columns: 5fr 6fr;
+    padding: 0;
+    background: var(--surface);
+  }
+  .auth-layout__brand {
+    display: flex;
+    flex-direction: column;
+    margin: 16px;
+    padding: 40px;
+    border-radius: calc(var(--card-radius) + 8px);
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+  }
+  .auth-layout__brand-text { margin-top: auto; display: grid; gap: 12px; max-width: 360px; }
+  .auth-layout__form {
+    max-width: 500px;
+    padding: 40px;
+    background: none;
+    border: 0;
+    border-radius: 0;
+  }
+}

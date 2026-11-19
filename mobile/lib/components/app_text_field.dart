@@ -23,6 +23,8 @@ class AppTextField extends StatefulWidget {
     this.textCapitalization = TextCapitalization.none,
     this.onChanged,
     this.onSubmitted,
+    this.onTap,
+    this.suffix,
   });
 
   final String label;
@@ -44,6 +46,12 @@ class AppTextField extends StatefulWidget {
   final TextCapitalization textCapitalization;
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
+
+  /// Para campos [readOnly] que abren un selector (ej. la fecha).
+  final VoidCallback? onTap;
+
+  /// Ícono o botón al final del campo. Los de contraseña ya traen el suyo.
+  final Widget? suffix;
 
   @override
   State<AppTextField> createState() => _AppTextFieldState();
@@ -69,6 +77,7 @@ class _AppTextFieldState extends State<AppTextField> {
         textCapitalization: widget.textCapitalization,
         onChanged: widget.onChanged,
         onSubmitted: widget.onSubmitted,
+        onTap: widget.onTap,
         decoration: InputDecoration(
           labelText: widget.label,
           hintText: widget.hint,
@@ -82,7 +91,7 @@ class _AppTextFieldState extends State<AppTextField> {
                   icon: Icon(_obscured ? Icons.visibility_outlined : Icons.visibility_off_outlined),
                   onPressed: () => setState(() => _obscured = !_obscured),
                 )
-              : null,
+              : widget.suffix,
         ),
       );
 }

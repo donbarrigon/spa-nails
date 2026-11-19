@@ -1,0 +1,7 @@
+{#- BrandMark: monograma del local en un círculo rosa pastel, con el nombre al lado. -#}
+{%- macro brand_mark(initials, name, size=40, show_name=true, on_pastel=false) -%}
+<a href="/" class="brand-mark{% if on_pastel %} brand-mark--on-pastel{% endif %}" style="--brand-size: {{ size }}px" aria-label="{{ name }}, inicio">
+  <span class="brand-mark__circle" aria-hidden="true">{{ initials }}</span>
+  {%- if show_name %}<span class="brand-mark__name" aria-hidden="true">{{ name }}</span>{% endif %}
+</a>
+{%- endmacro -%}

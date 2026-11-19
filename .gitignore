@@ -7,9 +7,8 @@ build/
 **/.flutter-plugins*
 .pub-cache/
 
-# Salida de dart compile js (se regenera con `just build-web`)
-backend/static/js/*
-!backend/static/js/.gitkeep
+# Estáticos de la web: CSS minificado, JS de Dart y fuentes (se regeneran con ./build_web.sh)
+backend/public/
 
 # Datos de ejecución del backend (logs y certificados de ironforge)
 backend/tmp/

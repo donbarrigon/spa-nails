@@ -1,0 +1,4 @@
+{#- UserAvatar: círculo con las iniciales. Cuando se puedan subir fotos, va la imagen. -#}
+{%- macro user_avatar(initials, size=56) -%}
+<span class="user-avatar" style="--avatar-size: {{ size }}px" aria-hidden="true">{{ initials }}</span>
+{%- endmacro -%}

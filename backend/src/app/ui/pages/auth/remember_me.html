@@ -1,0 +1,7 @@
+{#- Casilla "Recordarme": mantiene la sesión abierta por 30 días. -#}
+{%- macro remember_me(checked=true) -%}
+<label class="remember-me">
+  <input type="checkbox" name="remember"{% if checked %} checked{% endif %}>
+  <span>Recordarme</span>
+</label>
+{%- endmacro -%}

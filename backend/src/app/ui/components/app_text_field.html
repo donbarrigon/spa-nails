@@ -1,0 +1,45 @@
+{#- AppTextField: campo relleno con etiqueta, ayuda y error. `name` es el nombre
+    del campo en la API: el JS pone ahí los errores que vuelven del backend. -#}
+{%- import "components/icon.html" as icon -%}
+{%- macro app_text_field(name, label, value="", kind="text", hint="", helper="", error="", autocomplete="", inputmode="", maxlength=0, password=false, autofocus=false, disabled=false) -%}
+<div class="app-text-field{% if kind == "date" %} app-text-field--date{% endif %}{% if !error.is_empty() %} app-text-field--invalid{% endif %}" data-field="{{ name }}">
+  <div class="app-text-field__box">
+    <input class="app-text-field__input" id="field-{{ name }}" name="{{ name }}"
+      type="{% if password %}password{% else %}{{ kind }}{% endif %}"
+      value="{{ value }}"
+      placeholder="{% if hint.is_empty() %} {% else %}{{ hint }}{% endif %}"
+      {%- if !autocomplete.is_empty() %} autocomplete="{{ autocomplete }}"{% endif %}
+      {%- if !inputmode.is_empty() %} inputmode="{{ inputmode }}"{% endif %}
+      {%- if maxlength > 0 %} maxlength="{{ maxlength }}"{% endif %}
+      {%- if password %} autocapitalize="none" spellcheck="false"{% endif %}
+      {%- if autofocus %} autofocus{% endif %}
+      {%- if disabled %} disabled{% endif %}
+      aria-describedby="field-{{ name }}-error{% if !helper.is_empty() %} field-{{ name }}-helper{% endif %}">
+    <label class="app-text-field__label" for="field-{{ name }}">{{ label }}</label>
+    {%- if password %}
+    <button type="button" class="app-text-field__suffix" data-toggle-password aria-label="Mostrar contraseña" aria-pressed="false">
+      {%- call icon::icon("visibility") -%}{% endcall %}{% call icon::icon("visibility_off") %}{% endcall %}
+    </button>
+    {%- endif %}
+  </div>
+  {%- if !helper.is_empty() %}
+  <p class="app-text-field__helper" id="field-{{ name }}-helper">{{ helper }}</p>
+  {%- endif %}
+  <p class="app-text-field__error" id="field-{{ name }}-error" role="alert"{% if error.is_empty() %} hidden{% endif %}>{{ error }}</p>
+</div>
+{%- endmacro -%}
+
+{#- Mismo campo como lista desplegable (DropdownButtonFormField en mobile).
+    Las opciones van en el cuerpo del `call`. -#}
+{%- macro app_select(name, label, error="", disabled=false) -%}
+<div class="app-text-field app-text-field--select{% if !error.is_empty() %} app-text-field--invalid{% endif %}" data-field="{{ name }}">
+  <div class="app-text-field__box">
+    <select class="app-text-field__input" id="field-{{ name }}" name="{{ name }}"{% if disabled %} disabled{% endif %} aria-describedby="field-{{ name }}-error">
+      {{- caller() -}}
+    </select>
+    <label class="app-text-field__label" for="field-{{ name }}">{{ label }}</label>
+    <span class="app-text-field__suffix">{% call icon::icon("expand_more") %}{% endcall %}</span>
+  </div>
+  <p class="app-text-field__error" id="field-{{ name }}-error" role="alert"{% if error.is_empty() %} hidden{% endif %}>{{ error }}</p>
+</div>
+{%- endmacro -%}

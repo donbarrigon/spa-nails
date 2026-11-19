@@ -1,3 +1,4 @@
+import '../models/profile.dart';
 import 'phone_codes.dart';
 
 /// Reglas de formato con los mismos patrones que ironforge
@@ -61,6 +62,45 @@ abstract final class Rules {
   static String normalizePhone(String phone) {
     final clean = phone.replaceAll(RegExp(r'[\s\-.()]'), '');
     return clean.startsWith('00') ? '+${clean.substring(2)}' : clean;
+  }
+
+  static final _isoDate = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$');
+
+  /// Fecha `YYYY-MM-DD` entre 1900 y hoy, a medianoche UTC; `null` si no lo es.
+  /// Igual que `parse_date` de `validators::profile` del backend.
+  static DateTime? parsePastDate(String value, {DateTime? today}) {
+    final match = _isoDate.firstMatch(value);
+    if (match == null) return null;
+    final [y, m, d] = [for (var i = 1; i <= 3; i++) int.parse(match.group(i)!)];
+    final date = DateTime.utc(y, m, d);
+    // `DateTime` corre los días inválidos (30 de febrero → 2 de marzo).
+    if (date.month != m || date.day != d) return null;
+    final now = (today ?? DateTime.now()).toUtc();
+    if (date.isBefore(DateTime.utc(1900)) || date.isAfter(DateTime.utc(now.year, now.month, now.day))) {
+      return null;
+    }
+    return date;
+  }
+
+  /// Formato del documento según su tipo; sin tipo, el documento va vacío.
+  /// Igual que `document_for_type` de `validators::profile` del backend.
+  static bool isDocument(String value, DocumentType? type) {
+    bool digits(int min, int max) =>
+        value.length >= min && value.length <= max && RegExp(r'^[0-9]+$').hasMatch(value);
+    return switch (type) {
+      null => value.isEmpty,
+      DocumentType.cc || DocumentType.ti => digits(6, 10),
+      DocumentType.ppt => digits(6, 12),
+      DocumentType.nit => RegExp(r'^[0-9]{9,10}(-[0-9])?$').hasMatch(value),
+      DocumentType.ce || DocumentType.pp => RegExp(r'^[A-Za-z0-9]{5,15}$').hasMatch(value),
+    };
+  }
+
+  /// Fecha como `YYYY-MM-DD` (la parte UTC).
+  static String isoDate(DateTime date) {
+    final d = date.toUtc();
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${d.year.toString().padLeft(4, '0')}-${two(d.month)}-${two(d.day)}';
   }
 
   /// Quita espacios de los extremos y deja uno solo entre palabras.

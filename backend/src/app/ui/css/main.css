@@ -1,0 +1,273 @@
+/* Base de todas las páginas: tema (mismos valores que mobile/lib/core/theme),
+   tipografía, reset y el marco de la app (shell). Los componentes están en
+   css/components y cada módulo (auth, home, profile) tiene su propia hoja. */
+
+/* === Fuentes ============================================================ */
+
+@font-face { font-family: "DM Sans"; src: url("/resources/fonts/DMSans-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "DM Sans"; src: url("/resources/fonts/DMSans-Medium.ttf") format("truetype"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "DM Sans"; src: url("/resources/fonts/DMSans-SemiBold.ttf") format("truetype"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "DM Sans"; src: url("/resources/fonts/DMSans-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Playfair Display"; src: url("/resources/fonts/PlayfairDisplay-Medium.ttf") format("truetype"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Playfair Display"; src: url("/resources/fonts/PlayfairDisplay-SemiBold.ttf") format("truetype"); font-weight: 600; font-display: swap; }
+
+/* === Tema =============================================================== */
+/* Claro por defecto; oscuro si el sistema lo pide y el usuario no eligió
+   (sin data-theme), o si eligió "dark" en sus preferencias. */
+
+:root {
+  color-scheme: light;
+
+  /* Fucsia: único color de acción. */
+  --primary: #c0267a;
+  --on-primary: #ffffff;
+  /* Rosa pastel: indicadores, avatar, fondos de apoyo. Nunca como texto. */
+  --primary-container: #ffd9e8;
+  --on-primary-container: #5e0b3a;
+  --secondary: #8b5a70;
+  --secondary-container: #fbe3ec;
+  --on-secondary-container: #3a1626;
+  --tertiary-container: #ecebef;
+  --on-tertiary-container: #26242a;
+  --error: #ba1a1a;
+  --error-container: #ffdad6;
+  --on-error-container: #410002;
+  --surface: #fffbfc;
+  --on-surface: #221a1e;
+  --on-surface-variant: #5c5157;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #fdf5f8;
+  --surface-container: #f8eff3;
+  --surface-container-high: #f2e8ed;
+  --surface-container-highest: #ece2e7;
+  --outline: #8f8288;
+  --outline-variant: #e3d7dd;
+  --scrim: rgb(0 0 0 / 0.32);
+  --success: #2e7d5b;
+  --success-container: #d7f2e3;
+  --warning: #9a5800;
+  --warning-container: #ffe6c7;
+
+  /* Formas (AppTheme). */
+  --button-height: 52px;
+  --field-radius: 14px;
+  --card-radius: 20px;
+
+  /* Letras (AppText). */
+  --font-display: "Playfair Display", Georgia, serif;
+  --font-body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Margen lateral del contenido (PageBody): 16 / 24 / 32. */
+  --gutter: 16px;
+  --drawer-width: 300px;
+}
+
+/* Los valores oscuros van dos veces (preferencia guardada y la del sistema):
+   CSS no tiene forma de compartir un bloque entre dos selectores con @media. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --primary: #ff8dc4;
+  --on-primary: #5e0b3a;
+  --primary-container: #8c1a5a;
+  --on-primary-container: #ffd9e8;
+  --secondary: #e6b8cb;
+  --secondary-container: #5c3445;
+  --on-secondary-container: #fbe3ec;
+  --tertiary-container: #45434a;
+  --on-tertiary-container: #ecebef;
+  --error: #ffb4ab;
+  --error-container: #5c1a16;
+  --on-error-container: #ffdad6;
+  --surface: #171215;
+  --on-surface: #eee2e7;
+  --on-surface-variant: #d2c3ca;
+  --surface-container-lowest: #110d10;
+  --surface-container-low: #1f191c;
+  --surface-container: #241d21;
+  --surface-container-high: #2e262a;
+  --surface-container-highest: #393035;
+  --outline: #9c8d94;
+  --outline-variant: #4a3f45;
+  --scrim: rgb(0 0 0 / 0.5);
+  --success: #7bd3a8;
+  --success-container: #1d3d2d;
+  --warning: #ffb95c;
+  --warning-container: #4a2f00;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --primary: #ff8dc4;
+    --on-primary: #5e0b3a;
+    --primary-container: #8c1a5a;
+    --on-primary-container: #ffd9e8;
+    --secondary: #e6b8cb;
+    --secondary-container: #5c3445;
+    --on-secondary-container: #fbe3ec;
+    --tertiary-container: #45434a;
+    --on-tertiary-container: #ecebef;
+    --error: #ffb4ab;
+    --error-container: #5c1a16;
+    --on-error-container: #ffdad6;
+    --surface: #171215;
+    --on-surface: #eee2e7;
+    --on-surface-variant: #d2c3ca;
+    --surface-container-lowest: #110d10;
+    --surface-container-low: #1f191c;
+    --surface-container: #241d21;
+    --surface-container-high: #2e262a;
+    --surface-container-highest: #393035;
+    --outline: #9c8d94;
+    --outline-variant: #4a3f45;
+    --scrim: rgb(0 0 0 / 0.5);
+    --success: #7bd3a8;
+    --success-container: #1d3d2d;
+    --warning: #ffb95c;
+    --warning-container: #4a2f00;
+  }
+}
+
+@media (min-width: 600px) {
+  :root { --gutter: 24px; }
+}
+
+@media (min-width: 840px) {
+  :root { --gutter: 32px; }
+}
+
+/* === Reset y tipografía ================================================= */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--surface);
+  color: var(--on-surface);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, p { margin: 0; }
+
+a { color: var(--primary); text-underline-offset: 3px; }
+
+button, input, select, textarea { font: inherit; color: inherit; }
+
+svg.icon { width: 24px; height: 24px; flex: none; fill: currentColor; }
+
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+[hidden] { display: none !important; }
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* Escala de AppText. */
+.text-display-medium { font-family: var(--font-display); font-size: 36px; font-weight: 500; line-height: 1.1; }
+.text-headline-large { font-family: var(--font-display); font-size: 28px; font-weight: 500; line-height: 1.2; }
+.text-headline-medium { font-family: var(--font-display); font-size: 24px; font-weight: 500; line-height: 1.2; }
+.text-headline-small { font-family: var(--font-display); font-size: 22px; font-weight: 500; line-height: 1.25; }
+.text-title-large { font-size: 20px; font-weight: 600; line-height: 1.3; }
+.text-title-medium { font-size: 16px; font-weight: 600; line-height: 1.4; }
+.text-body-large { font-size: 16px; line-height: 1.5; }
+.text-body-small { font-size: 13px; line-height: 1.45; }
+.text-label-small { font-size: 12px; font-weight: 500; line-height: 1.3; letter-spacing: 0.4px; }
+.text-variant { color: var(--on-surface-variant); }
+.text-overline { font-size: 12px; font-weight: 500; letter-spacing: 1px; color: var(--on-surface-variant); text-transform: uppercase; }
+
+/* Tarjeta de Material con el tema de la app: borde, sin sombra. */
+.card {
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--card-radius);
+}
+
+.divider { height: 1px; border: 0; margin: 0; background: var(--outline-variant); }
+
+/* === Shell (app_shell + app_drawer) ===================================== */
+/* Celular y tablet: menú desplegable con la hamburguesa.
+   Escritorio (>= 840): menú fijo a la izquierda. */
+
+.app-shell { min-height: 100vh; }
+
+.app-shell__main { min-width: 0; }
+
+.app-drawer {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 30;
+  width: min(var(--drawer-width), 85vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-radius: 0 16px 16px 0;
+  transform: translateX(-105%);
+  transition: transform 200ms ease;
+  overflow-y: auto;
+}
+
+.app-drawer__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 29;
+  background: var(--scrim);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+}
+
+.drawer-open .app-drawer { transform: none; }
+.drawer-open .app-drawer__scrim { opacity: 1; pointer-events: auto; }
+.drawer-open { overflow: hidden; }
+
+.app-drawer__brand { padding: 20px 20px 16px; }
+
+.app-drawer__user { padding: 0 20px 16px; display: grid; }
+.app-drawer__user .text-body-small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.app-drawer__nav { display: grid; gap: 4px; padding: 0 12px; }
+
+.app-drawer__account { margin-top: auto; padding: 16px; display: grid; gap: 4px; }
+
+/* ListTile con forma de píldora. */
+.nav-tile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 56px;
+  padding: 0 16px;
+  border-radius: 999px;
+  color: var(--on-surface);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.nav-tile .icon { color: var(--on-surface-variant); }
+.nav-tile:hover { background: var(--surface-container); }
+.nav-tile[aria-current="page"] { background: var(--primary-container); color: var(--on-primary-container); }
+.nav-tile[aria-current="page"] .icon { color: var(--on-primary-container); }
+
+@media (min-width: 840px) {
+  .app-shell { display: grid; grid-template-columns: var(--drawer-width) minmax(0, 1fr); }
+  .app-drawer {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    width: auto;
+    transform: none;
+    transition: none;
+    border-radius: 0;
+    background: var(--surface-container-low);
+    border-right: 1px solid var(--outline-variant);
+  }
+  .app-drawer__scrim, .app-top-bar__menu { display: none; }
+  .drawer-open { overflow: auto; }
+}

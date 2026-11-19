@@ -1,0 +1,51 @@
+{#- Inicio. Por ahora muestra los datos de la sesión, o invita a entrar. -#}
+{%- extends "shell/app_shell.html" -%}
+{%- import "components/app_top_bar.html" as app_top_bar -%}
+{%- import "components/page_body.html" as page_body -%}
+{%- import "components/app_button.html" as app_button -%}
+{%- import "components/info_panel.html" as info_panel -%}
+{%- import "pages/profile/account_labels.html" as account_labels -%}
+{%- block styles %}
+  <link rel="stylesheet" href="/resources/css/home.css">
+{%- endblock %}
+{%- block main %}
+{% call app_top_bar::app_top_bar("Inicio", show_menu=true) %}{% endcall %}
+<main>
+{% call page_body::page_body() %}
+  {%- if let Some(user) = shell.user %}
+  <h2 class="text-headline-medium">Hola, {{ user.first_name }}</h2>
+  <section class="card session-card">
+    <p class="text-overline">Tu sesión</p>
+    <div class="info-panel__body">
+      {% call info_panel::info_row("Nombre") %}{{ user.name }}{% endcall %}
+      {% call info_panel::info_row("Usuario") %}@{{ user.nickname }}{% endcall %}
+      {% call info_panel::info_row("Correo") %}{{ user.email }}{% endcall %}
+      {% call info_panel::info_row("Estado del correo") %}{% call account_labels::verified(user.email_verified) %}{% endcall %}{% endcall %}
+      {%- if let Some(email) = user.pending_email %}
+      {% call info_panel::info_row("Correo por confirmar") %}{{ email }}{% endcall %}
+      {%- endif %}
+      {% call info_panel::info_row("Teléfono") %}{{ user.phone }}{% endcall %}
+      {% call info_panel::info_row("Estado del teléfono") %}{% call account_labels::verified(user.phone_verified) %}{% endcall %}{% endcall %}
+      {%- if let Some(phone) = user.pending_phone %}
+      {% call info_panel::info_row("Teléfono por confirmar") %}{{ phone }}{% endcall %}
+      {%- endif %}
+      {% call info_panel::info_row("Verificación en dos pasos") %}{% call account_labels::two_factor(user.two_factor_label()) %}{% endcall %}{% endcall %}
+      {% call info_panel::info_row("Google") %}{% call account_labels::google(user.google_linked) %}{% endcall %}{% endcall %}
+      {% call info_panel::info_row("Roles") %}{{ user.roles }}{% endcall %}
+      {% call info_panel::info_row("Cuenta creada") %}{{ user.created_at }}{% endcall %}
+    </div>
+  </section>
+  {%- else %}
+  <h2 class="text-headline-medium">Te damos la bienvenida a {{ shell.app_name() }}</h2>
+  <section class="card guest-card">
+    <h3 class="text-title-medium">Inicia sesión para ver tus datos</h3>
+    <p class="text-variant">Con tu cuenta puedes reservar y ver tus citas.</p>
+    <div class="guest-card__actions">
+      {% call app_button::app_button("Iniciar sesión", href="/login") %}{% endcall %}
+      {% call app_button::app_button("Crear cuenta", variant="outlined", href="/register") %}{% endcall %}
+    </div>
+  </section>
+  {%- endif %}
+{% endcall %}
+</main>
+{%- endblock %}

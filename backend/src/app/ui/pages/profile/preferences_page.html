@@ -1,0 +1,28 @@
+{#- Preferencias. Por ahora, el tema claro u oscuro. -#}
+{%- extends "pages/profile/profile_layout.html" -%}
+{%- import "components/icon.html" as icon -%}
+{%- import "components/page_body.html" as page_body -%}
+{%- import "components/info_panel.html" as info_panel -%}
+{%- import "components/message_banner.html" as message_banner -%}
+{%- block content %}
+{%- if let Some(user) = shell.user %}
+{% call page_body::page_body() %}
+  {% call info_panel::info_panel("Tema", icon="palette") %}
+    <div class="info-panel__footer">
+      <p class="text-variant" id="theme-help">
+        {%- if user.theme.is_none() -%}
+        Ahora la app usa el tema de tu dispositivo. Elige uno para usarlo siempre.
+        {%- else -%}
+        Se aplica en todos tus dispositivos al iniciar sesión.
+        {%- endif -%}
+      </p>
+      <div class="segmented" role="group" aria-label="Tema" id="theme-options">
+        <button type="button" class="segmented__option" data-theme-option="light" aria-pressed="{{ user.theme_is("light") }}">{% call icon::icon("light_mode") %}{% endcall %}<span>Claro</span></button>
+        <button type="button" class="segmented__option" data-theme-option="dark" aria-pressed="{{ user.theme_is("dark") }}">{% call icon::icon("dark_mode") %}{% endcall %}<span>Oscuro</span></button>
+      </div>
+      {% call message_banner::message_banner(id="preferences-error") %}{% endcall %}
+    </div>
+  {% endcall %}
+{% endcall %}
+{%- endif %}
+{%- endblock %}

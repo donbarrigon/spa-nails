@@ -1,0 +1,24 @@
+{#- Paso 2 del login: el código de 6 dígitos. Oculto hasta que la API lo pide. -#}
+{%- import "components/icon.html" as icon -%}
+{%- import "components/app_text_field.html" as app_text_field -%}
+{%- import "components/app_button.html" as app_button -%}
+{%- import "components/message_banner.html" as message_banner -%}
+<form class="auth-form" id="two-factor-form" novalidate hidden>
+  <button type="button" class="icon-button auth-form__back" data-action="two-factor-back" aria-label="Volver">{% call icon::icon("arrow_back") %}{% endcall %}</button>
+  <h1 class="text-headline-large">Verifica que eres tú</h1>
+  <p class="auth-form__intro text-variant" id="two-factor-where"></p>
+  <div class="auth-form__lead">
+    {% call app_text_field::app_text_field("code", "Código", autocomplete="one-time-code", inputmode="numeric", maxlength=6) %}{% endcall %}
+  </div>
+  {% call message_banner::message_banner(id="two-factor-error") %}{% endcall %}
+  {% call message_banner::message_banner(tone="info", id="two-factor-notice") %}{% endcall %}
+  <div class="auth-form__actions">
+    {% call app_button::app_button("Verificar") %}{% endcall %}
+  </div>
+  <div class="auth-form__links">
+    <button type="button" class="app-button app-button--text" data-action="two-factor-resend"><span>Reenviar código</span></button>
+    <button type="button" class="app-button app-button--text" data-method="email"><span>Enviar al correo</span></button>
+    <button type="button" class="app-button app-button--text" data-method="whatsapp"><span>Enviar por WhatsApp</span></button>
+    <button type="button" class="app-button app-button--text" data-method="totp"><span>Usar app de autenticación</span></button>
+  </div>
+</form>

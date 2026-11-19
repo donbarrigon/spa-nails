@@ -5,7 +5,14 @@ use mongodb::bson::{DateTime, doc, oid::ObjectId};
 use serde_json::json;
 
 use crate::app::{
-    data::{
+    handlers::users::validators::user::{
+        ChangeEmailValidator, ChangePasswordValidator, ChangePhoneValidator, CodeValidator,
+        ForgotPasswordValidator, GoogleLinkValidator, GoogleLoginValidator, GoogleRegisterValidator,
+        LinkTokenValidator, LoginTwoFactorValidator, PasswordValidator,
+        ResendTwoFactorValidator, ResetPasswordCodeValidator, ResetPasswordValidator,
+        TwoFactorValidator, UserLoginValidator, UserRegisterValidator,
+    },
+    shared::{
         models::{
             history::{
                 ActionType::{Create, Delete, Update},
@@ -16,15 +23,8 @@ use crate::app::{
             user::{TwoFactorMethod, User},
         },
         resources::session_user::SessionUser,
+        services::{google, mailer, totp, whatsapp},
     },
-    handlers::users::validators::user::{
-        ChangeEmailValidator, ChangePasswordValidator, ChangePhoneValidator, CodeValidator,
-        ForgotPasswordValidator, GoogleLinkValidator, GoogleLoginValidator, GoogleRegisterValidator,
-        LinkTokenValidator, LoginTwoFactorValidator, PasswordValidator,
-        ResendTwoFactorValidator, ResetPasswordCodeValidator, ResetPasswordValidator,
-        TwoFactorValidator, UserLoginValidator, UserRegisterValidator,
-    },
-    services::{google, mailer, totp, whatsapp},
 };
 
 pub async fn register(c: &mut Context) -> Result<(), ForgeError> {

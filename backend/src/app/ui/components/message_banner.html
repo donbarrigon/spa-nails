@@ -1,0 +1,9 @@
+{#- MessageBanner: mensaje en línea, tone = "error" o "info". Con `id` y vacío
+    queda oculto y el JS lo llena (errores que vuelven de la API). -#}
+{%- import "components/icon.html" as icon -%}
+{%- macro message_banner(message="", tone="error", id="") -%}
+<div class="message-banner{% if tone == "info" %} message-banner--info{% endif %}"{% if !id.is_empty() %} id="{{ id }}"{% endif %} role="{% if tone == "info" %}status{% else %}alert{% endif %}"{% if message.is_empty() %} hidden{% endif %}>
+  {%- if tone == "info" %}{% call icon::icon("info") %}{% endcall %}{% else %}{% call icon::icon("error") %}{% endcall %}{% endif %}
+  <p class="message-banner__text">{{ message }}</p>
+</div>
+{%- endmacro -%}

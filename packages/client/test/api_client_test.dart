@@ -111,4 +111,19 @@ void main() {
       throwsA(isA<ApiException>().having((e) => e.isNetwork, 'isNetwork', isTrue)),
     );
   });
+
+  test('ProfileApi envía PUT a las rutas de perfil y lee el usuario', () async {
+    final seen = <String>[];
+    final api = _client((r) {
+      seen.add('${r.method} ${r.url.path} ${r.body}');
+      return http.Response(jsonEncode({..._user, 'preferences': {'theme': 'dark'}}), 200);
+    });
+
+    final user = await ProfileApi(api).updatePreferences(PreferencesValidator(theme: ThemePreference.dark));
+    await ProfileApi(api).update(UpdateProfileValidator(nickname: 'ana.perez', name: 'Ana Pérez'));
+
+    expect(user.theme, ThemePreference.dark);
+    expect(seen.first, 'PUT /api/users/profile/preferences {"theme":"dark"}');
+    expect(seen.last, startsWith('PUT /api/users/profile {"nickname":"ana.perez"'));
+  });
 }

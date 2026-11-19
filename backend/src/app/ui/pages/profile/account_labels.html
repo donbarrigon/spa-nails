@@ -1,0 +1,19 @@
+{#- Chips de la cuenta que se repiten entre inicio, el resumen y autenticación
+    (AccountLabels en mobile). -#}
+{%- import "components/status_chip.html" as status_chip -%}
+
+{%- macro verified(is_verified) -%}
+{%- if is_verified %}{% call status_chip::status_chip("Verificado", "success") %}{% endcall %}{% else %}{% call status_chip::status_chip("Sin verificar", "warning") %}{% endcall %}{% endif -%}
+{%- endmacro -%}
+
+{%- macro two_factor(label) -%}
+{%- if let Some(label) = label %}{% call status_chip::status_chip(label, "success") %}{% endcall %}{% else %}{% call status_chip::status_chip("Desactivada", "neutral") %}{% endcall %}{% endif -%}
+{%- endmacro -%}
+
+{%- macro google(linked) -%}
+{%- if linked %}{% call status_chip::status_chip("Vinculado", "success") %}{% endcall %}{% else %}{% call status_chip::status_chip("No vinculado", "neutral") %}{% endcall %}{% endif -%}
+{%- endmacro -%}
+
+{%- macro totp(confirmed) -%}
+{%- if confirmed %}{% call status_chip::status_chip("Configurada", "success") %}{% endcall %}{% else %}{% call status_chip::status_chip("Sin configurar", "neutral") %}{% endcall %}{% endif -%}
+{%- endmacro -%}

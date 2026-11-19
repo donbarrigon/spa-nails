@@ -1,0 +1,29 @@
+{#- Perfil: un resumen y una pantalla por grupo. Celular y tablet cambian de
+    pantalla con la barra de abajo; escritorio, con el panel de la derecha. -#}
+{%- extends "shell/app_shell.html" -%}
+{%- import "components/icon.html" as icon -%}
+{%- import "components/app_top_bar.html" as app_top_bar -%}
+{%- block styles %}
+  <link rel="stylesheet" href="/resources/css/profile.css">
+{%- endblock %}
+{%- block scripts %}
+  <script defer src="/resources/js/profile.js"></script>
+{%- endblock %}
+{%- block main %}
+{% call app_top_bar::app_top_bar(tab.title(), show_menu=true) %}{% endcall %}
+<div class="profile-layout">
+  <main class="profile-page">
+    {%- block content %}{% endblock %}
+  </main>
+  <nav class="profile-nav" aria-label="Tu cuenta">
+    <p class="profile-nav__title text-overline">Tu cuenta</p>
+    {%- for item in tabs %}
+    <a class="profile-nav__item" href="{{ item.href() }}"{% if *item == tab %} aria-current="page"{% endif %}>
+      {%- call icon::icon(item.icon()) -%}{% endcall %}
+      <span class="profile-nav__short">{{ item.short_label() }}</span>
+      <span class="profile-nav__long">{{ item.title() }}</span>
+    </a>
+    {%- endfor %}
+  </nav>
+</div>
+{%- endblock %}

@@ -1,0 +1,82 @@
+/* AppTextField: campo relleno con etiqueta flotante, ayuda y error.
+   La etiqueta sube cuando el campo tiene foco o texto (placeholder=" "). */
+
+.app-text-field { display: grid; gap: 4px; }
+
+.app-text-field__box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: var(--surface-container);
+  border-radius: var(--field-radius);
+  box-shadow: inset 0 0 0 0 var(--primary);
+  transition: box-shadow 120ms ease;
+}
+.app-text-field__box:focus-within { box-shadow: inset 0 0 0 2px var(--primary); }
+
+.app-text-field__input {
+  flex: 1;
+  min-width: 0;
+  height: 56px;
+  padding: 22px 16px 6px;
+  border: 0;
+  background: transparent;
+  outline: none;
+  font-size: 16px;
+  appearance: none;
+}
+select.app-text-field__input { cursor: pointer; padding-right: 40px; }
+.app-text-field__input[type="date"] { min-height: 56px; }
+
+.app-text-field__label {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--on-surface-variant);
+  font-size: 15px;
+  pointer-events: none;
+  transition: top 120ms ease, font-size 120ms ease, color 120ms ease;
+}
+.app-text-field__input:focus + .app-text-field__label,
+.app-text-field__input:not(:placeholder-shown) + .app-text-field__label,
+.app-text-field--select .app-text-field__label,
+.app-text-field--date .app-text-field__label {
+  top: 15px;
+  font-size: 12px;
+}
+.app-text-field__input:focus + .app-text-field__label { color: var(--primary); }
+.app-text-field__input::placeholder { color: transparent; }
+.app-text-field__input:focus::placeholder { color: var(--on-surface-variant); }
+
+.app-text-field__suffix {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-right: 4px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+}
+.app-text-field__suffix:hover { background: var(--surface-container-high); }
+.app-text-field--select .app-text-field__suffix { position: absolute; right: 4px; pointer-events: none; }
+
+.app-text-field__helper { padding: 0 16px; font-size: 13px; color: var(--on-surface-variant); }
+.app-text-field__error { padding: 0 16px; font-size: 13px; color: var(--error); }
+
+.app-text-field--invalid .app-text-field__box { box-shadow: inset 0 0 0 1px var(--error); }
+.app-text-field--invalid .app-text-field__box:focus-within { box-shadow: inset 0 0 0 2px var(--error); }
+.app-text-field--invalid .app-text-field__label,
+.app-text-field--invalid .app-text-field__input:focus + .app-text-field__label { color: var(--error); }
+.app-text-field--invalid .app-text-field__helper { display: none; }
+
+.app-text-field__input:disabled { cursor: default; }
+.app-text-field__box:has(:disabled) { opacity: 0.6; }
+
+/* Botón de la contraseña: "ver" mientras está oculta, "ocultar" mientras se ve. */
+[data-toggle-password] .icon + .icon,
+[data-toggle-password][aria-pressed="true"] .icon:first-child { display: none; }
+[data-toggle-password][aria-pressed="true"] .icon + .icon { display: block; }

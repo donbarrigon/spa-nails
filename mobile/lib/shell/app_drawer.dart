@@ -6,12 +6,20 @@ import '../core/bloc/bloc_provider.dart';
 import '../core/bloc/bloc_widgets.dart';
 import '../core/router.dart';
 import '../features/auth/session/session_bloc.dart';
+import 'app_shell.dart';
 
 /// Menú lateral: secciones arriba y la cuenta abajo.
 /// [permanent]: fijo en la pantalla (escritorio) en vez de desplegable.
 class AppDrawer extends StatelessWidget {
-  const AppDrawer({super.key, this.permanent = false});
+  const AppDrawer({
+    super.key,
+    required this.selected,
+    required this.onSelected,
+    this.permanent = false,
+  });
 
+  final AppSection selected;
+  final ValueChanged<AppSection> onSelected;
   final bool permanent;
 
   @override
@@ -51,15 +59,17 @@ class AppDrawer extends StatelessWidget {
                   ],
                 ),
               ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: ListTile(
-                selected: true,
-                leading: const Icon(Icons.home_outlined),
-                title: const Text('Inicio'),
-                onTap: () => go(() {}),
-              ),
-            ),
+            for (final section in AppSection.values)
+              if (section != AppSection.profile || state is SessionActive)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                  child: ListTile(
+                    selected: section == selected,
+                    leading: Icon(section.icon),
+                    title: Text(section.label),
+                    onTap: () => go(() => onSelected(section)),
+                  ),
+                ),
             const Spacer(),
             Padding(
               padding: const EdgeInsets.all(16),

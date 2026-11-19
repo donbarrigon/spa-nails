@@ -1,0 +1,32 @@
+{#- Login: correo o teléfono y contraseña; si la cuenta tiene segundo factor,
+    el JS muestra el paso del código (two_factor_step). -#}
+{%- extends "pages/auth/auth_layout.html" -%}
+{%- import "components/brand_mark.html" as brand_mark -%}
+{%- import "components/app_text_field.html" as app_text_field -%}
+{%- import "components/app_button.html" as app_button -%}
+{%- import "components/message_banner.html" as message_banner -%}
+{%- import "pages/auth/remember_me.html" as remember_me -%}
+{%- block form %}
+<form class="auth-form" id="login-form" novalidate>
+  <div class="auth-form__brand">{% call brand_mark::brand_mark(shell.brand_initials(), shell.app_name(), size=36) %}{% endcall %}</div>
+  <h1 class="text-headline-large">Hola de nuevo</h1>
+  <p class="auth-form__intro text-variant">Inicia sesión para reservar y ver tus citas.</p>
+  <div class="auth-form__lead">
+    {% call app_text_field::app_text_field("user", "Correo o teléfono", hint="tu@correo.com o +57 300 123 4567", autocomplete="username", inputmode="email", autofocus=true) %}{% endcall %}
+  </div>
+  {% call app_text_field::app_text_field("password", "Contraseña", password=true, autocomplete="current-password") %}{% endcall %}
+  {% call remember_me::remember_me() %}{% endcall %}
+  {% call message_banner::message_banner(id="login-error") %}{% endcall %}
+  <div class="auth-form__actions">
+    {% call app_button::app_button("Iniciar sesión") %}{% endcall %}
+  </div>
+  <div class="auth-form__links">
+    {% call app_button::app_button("Ahora no", variant="text", href="/") %}{% endcall %}
+  </div>
+  <p class="auth-form__switch">
+    <span>¿No tienes cuenta?</span>
+    {% call app_button::app_button("Crear cuenta", variant="text", href="/register") %}{% endcall %}
+  </p>
+</form>
+{% include "pages/auth/two_factor_step.html" %}
+{%- endblock %}

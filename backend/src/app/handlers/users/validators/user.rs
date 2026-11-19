@@ -3,7 +3,7 @@ use ironforge_macros::rules;
 use serde::{Deserialize, Serialize};
 
 use super::phone_codes::PHONE_CODES;
-use crate::app::data::models::user::TwoFactorMethod;
+use crate::app::shared::models::user::TwoFactorMethod;
 
 #[derive(Serialize, Deserialize)]
 pub struct UserRegisterValidator {

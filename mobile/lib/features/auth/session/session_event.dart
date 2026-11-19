@@ -25,6 +25,13 @@ final class SessionCookieChanged extends SessionEvent {
   final String? cookie;
 }
 
+/// El usuario cambió sus datos (perfil, correo, preferencias...): el backend
+/// respondió el usuario de la sesión actualizado.
+final class SessionUserUpdated extends SessionEvent {
+  const SessionUserUpdated(this.user);
+  final SessionUser user;
+}
+
 final class SessionLogoutRequested extends SessionEvent {
   const SessionLogoutRequested();
 }

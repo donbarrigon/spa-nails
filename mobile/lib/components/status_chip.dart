@@ -34,7 +34,14 @@ class StatusChip extends StatelessWidget {
             height: 6,
             decoration: BoxDecoration(color: fg, shape: BoxShape.circle),
           ),
-          Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: fg)),
+          // En espacios angostos se corta en vez de desbordar.
+          Flexible(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(color: fg),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );

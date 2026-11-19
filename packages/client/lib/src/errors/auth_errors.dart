@@ -1,4 +1,4 @@
-import 'package:client/client.dart';
+import '../api_exception.dart';
 
 /// Pasa los errores de la API a mensajes en español para el usuario.
 ///

@@ -1,0 +1,3 @@
+# Las plantillas viven junto al código de la web: src/app/ui/{shell,components,pages}.
+[general]
+dirs = ["src/app/ui"]

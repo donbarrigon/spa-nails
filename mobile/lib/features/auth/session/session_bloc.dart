@@ -49,6 +49,11 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
           await _storage.write(cookie);
         }
 
+      case SessionUserUpdated(:final user):
+        if (state case SessionActive(:final remember)) {
+          yield SessionActive(user, remember: remember);
+        }
+
       case SessionLogoutRequested():
         try {
           await _userApi.logout();

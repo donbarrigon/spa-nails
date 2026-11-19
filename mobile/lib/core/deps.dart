@@ -10,6 +10,7 @@ class AppDeps extends InheritedWidget {
     super.key,
     required this.api,
     required this.userApi,
+    required this.profileApi,
     required this.google,
     required this.sessionStorage,
     required super.child,
@@ -17,6 +18,7 @@ class AppDeps extends InheritedWidget {
 
   final ApiClient api;
   final UserApi userApi;
+  final ProfileApi profileApi;
   final GoogleAuth google;
   final SessionStorage sessionStorage;
 

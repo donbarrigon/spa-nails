@@ -1,0 +1,23 @@
+{#- InfoPanel: tarjeta con título, filas `info_row` y contenido extra en el
+    cuerpo del `call`. Con `action_href` muestra "Editar" junto al título. -#}
+{%- import "components/icon.html" as icon -%}
+{%- macro info_panel(title, icon="", action_href="", action_label="Editar") -%}
+<section class="card info-panel">
+  <div class="info-panel__header">
+    {%- if !icon.is_empty() %}{% call icon::icon(icon) %}{% endcall %}{% endif %}
+    <h2 class="info-panel__title">{{ title }}</h2>
+    {%- if !action_href.is_empty() %}
+    <a href="{{ action_href }}" class="app-button app-button--text">{% call icon::icon("edit") %}{% endcall %}<span>{{ action_label }}</span></a>
+    {%- endif %}
+  </div>
+  <div class="info-panel__body">{{ caller() }}</div>
+</section>
+{%- endmacro -%}
+
+{#- Fila etiqueta–valor; el valor (texto o `status_chip`) va en el cuerpo del `call`. -#}
+{%- macro info_row(label) -%}
+<div class="info-panel__row">
+  <span class="info-panel__label">{{ label }}</span>
+  <span class="info-panel__value">{{ caller() }}</span>
+</div>
+{%- endmacro -%}

@@ -2,8 +2,8 @@ use mongodb::bson::{DateTime, oid::ObjectId};
 
 use super::init_env;
 use crate::app::{
-    data::models::user::User, handlers::users::validators::user::UserRegisterValidator,
-    services::totp,
+    handlers::users::validators::user::UserRegisterValidator,
+    shared::{models::user::User, services::totp},
 };
 
 fn user() -> User {

@@ -16,7 +16,7 @@ use mongodb::bson::{doc, oid::ObjectId};
 use sha2::{Digest, Sha256};
 use totp_rs::{Builder, Secret, Totp};
 
-use crate::app::data::models::user::User;
+use crate::app::shared::models::user::User;
 
 /// Nombre que muestra la app de autenticación junto a la cuenta.
 const ISSUER: &str = "MR nails";

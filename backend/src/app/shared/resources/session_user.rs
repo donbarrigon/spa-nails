@@ -2,7 +2,9 @@ use ironforge::{Authenticatable, ForgeError};
 use mongodb::bson::{DateTime, oid::ObjectId};
 use serde::{Deserialize, Serialize};
 
-use crate::app::data::models::user::{TwoFactorMethod, User};
+use serde_json::Value;
+
+use crate::app::shared::models::user::{DocumentType, TwoFactorMethod, User};
 
 /// Copia del usuario que vive en la sesión (RAM y documento de sesión en Mongo).
 /// Todo el `User` menos las credenciales: `password` y `remember_token`.
@@ -12,6 +14,20 @@ pub struct SessionUser {
     pub nickname: String,
     pub name: String,
     pub avatar: String,
+    pub banner: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub birthdate: Option<DateTime>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub document_type: Option<DocumentType>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub document: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub address: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub city: Option<String>,
+    /// `profile.preferences` tal cual (ej. `{ "theme": "dark" }`).
+    #[serde(default)]
+    pub preferences: Value,
     pub email: String,
     pub phone: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -51,6 +67,13 @@ impl TryFrom<&User> for SessionUser {
             nickname: user.nickname.clone(),
             name: user.profile.name.clone(),
             avatar: user.profile.avatar.clone(),
+            banner: user.profile.banner.clone(),
+            birthdate: user.profile.birthdate,
+            document_type: user.profile.document_type,
+            document: user.profile.document.clone(),
+            address: user.profile.address.clone(),
+            city: user.profile.city.clone(),
+            preferences: user.profile.preferences.clone(),
             email: user.email.clone(),
             phone: user.phone.clone(),
             pending_email: user.pending_email.clone(),

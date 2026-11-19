@@ -1,0 +1,17 @@
+/* SnackBar: aviso pasajero abajo (ej. "Guardamos tus datos"). Lo muestra el JS. */
+
+.snack-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  z-index: 40;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 14px 16px;
+  border-radius: var(--field-radius);
+  background: var(--on-surface);
+  color: var(--surface);
+  transform: translate(-50%, 150%);
+  transition: transform 200ms ease;
+}
+.snack-bar--visible { transform: translate(-50%, 0); }

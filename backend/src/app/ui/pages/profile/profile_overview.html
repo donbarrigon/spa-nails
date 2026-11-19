@@ -1,0 +1,39 @@
+{#- Resumen del perfil: los datos por grupos; "Editar" lleva a cada pantalla. -#}
+{%- extends "pages/profile/profile_layout.html" -%}
+{%- import "components/page_body.html" as page_body -%}
+{%- import "components/info_panel.html" as info_panel -%}
+{%- import "components/user_avatar.html" as user_avatar -%}
+{%- import "pages/profile/account_labels.html" as account_labels -%}
+{%- block content %}
+{%- if let Some(user) = shell.user %}
+{% call page_body::page_body() %}
+  <div class="profile-header">
+    {% call user_avatar::user_avatar(user.initials, size=72) %}{% endcall %}
+    <div class="profile-header__text">
+      <h2 class="text-headline-small">{{ user.name }}</h2>
+      <p class="text-variant">@{{ user.nickname }}</p>
+      <p class="text-body-small text-variant">Cuenta creada el {{ user.created_at }}</p>
+    </div>
+  </div>
+  {% call info_panel::info_panel("Autenticación", icon="lock", action_href="/profile/account") %}
+    {% call info_panel::info_row("Correo") %}{{ user.email }}{% endcall %}
+    {% call info_panel::info_row("Estado del correo") %}{% call account_labels::verified(user.email_verified) %}{% endcall %}{% endcall %}
+    {% call info_panel::info_row("Teléfono") %}{{ user.phone }}{% endcall %}
+    {% call info_panel::info_row("Estado del teléfono") %}{% call account_labels::verified(user.phone_verified) %}{% endcall %}{% endcall %}
+    {% call info_panel::info_row("Verificación en dos pasos") %}{% call account_labels::two_factor(user.two_factor_label()) %}{% endcall %}{% endcall %}
+    {% call info_panel::info_row("Google") %}{% call account_labels::google(user.google_linked) %}{% endcall %}{% endcall %}
+  {% endcall %}
+  {% call info_panel::info_panel("Datos personales", icon="badge", action_href="/profile/personal") %}
+    {% call info_panel::info_row("Nombre") %}{{ user.name }}{% endcall %}
+    {% call info_panel::info_row("Usuario") %}@{{ user.nickname }}{% endcall %}
+    {% call info_panel::info_row("Fecha de nacimiento") %}{{ user.birthdate }}{% endcall %}
+    {% call info_panel::info_row("Documento") %}{{ user.document }}{% endcall %}
+    {% call info_panel::info_row("Dirección") %}{{ user.or_empty(user.address) }}{% endcall %}
+    {% call info_panel::info_row("Ciudad") %}{{ user.or_empty(user.city) }}{% endcall %}
+  {% endcall %}
+  {% call info_panel::info_panel("Preferencias", icon="tune", action_href="/profile/preferences") %}
+    {% call info_panel::info_row("Tema") %}{{ user.theme_label() }}{% endcall %}
+  {% endcall %}
+{% endcall %}
+{%- endif %}
+{%- endblock %}
