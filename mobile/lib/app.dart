@@ -20,6 +20,7 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   final _navigator = GlobalKey<NavigatorState>();
+  late final AppLifecycleListener _lifecycle;
 
   SessionBloc get _session => BlocProvider.of<SessionBloc>(context);
 
@@ -29,6 +30,15 @@ class _AppState extends State<App> {
     // Se revisa aquí y no en main: así el listener de abajo ya escucha cuando
     // llega el resultado.
     _session.add(const SessionChecked());
+    // Al volver a la app se actualiza el usuario: pudo verificar el correo
+    // desde el enlace del email en el navegador.
+    _lifecycle = AppLifecycleListener(onResume: () => _session.add(const SessionRefreshRequested()));
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
   }
 
   /// Al abrir sin sesión recordada se ofrece el login, con "Ahora no".

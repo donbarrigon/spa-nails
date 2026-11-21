@@ -17,6 +17,7 @@
   {% call app_text_field::app_text_field("email", "Correo", kind="email", autocomplete="email", inputmode="email") %}{% endcall %}
   {% call app_text_field::app_text_field("phone", "Teléfono", kind="tel", hint="+57 300 123 4567", helper="Con el código de país. Te enviaremos un código por WhatsApp para verificarlo.", autocomplete="tel", inputmode="tel") %}{% endcall %}
   {% call app_text_field::app_text_field("password", "Contraseña", helper="De 8 a 32 caracteres.", password=true, autocomplete="new-password") %}{% endcall %}
+  {% call app_text_field::app_text_field("password_confirmation", "Repite la contraseña", password=true, autocomplete="new-password") %}{% endcall %}
   {% call remember_me::remember_me() %}{% endcall %}
   {% call message_banner::message_banner(id="register-error") %}{% endcall %}
   <div class="auth-form__actions">

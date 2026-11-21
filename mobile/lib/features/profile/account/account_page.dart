@@ -1,3 +1,4 @@
+import 'package:client/client.dart';
 import 'package:flutter/material.dart';
 import 'package:shared/shared.dart';
 
@@ -30,7 +31,7 @@ class AccountPage extends StatelessWidget {
                 AppButton.outlined(
                   label: 'Cambiar contraseña',
                   expand: false,
-                  onPressed: () => showAccountDialog(context, const ChangePasswordDialog()),
+                  onPressed: () => showAccountDialog(context, ChangePasswordDialog(email: user.email)),
                 ),
               ]),
             ],
@@ -65,9 +66,11 @@ class _EmailPanel extends StatelessWidget {
     final api = AppDeps.of(context).userApi;
 
     return ProfileForm(
-      successMessage: (result) => result is SessionUser
-          ? 'Cancelamos el cambio de correo'
-          : 'Te enviamos un enlace nuevo a ${user.email}',
+      successMessage: (result) => switch (result) {
+        SessionUser() when user.pendingEmail != null => 'Cancelamos el cambio de correo',
+        SessionUser() => 'Tu correo ya está verificado',
+        _ => 'Te enviamos un enlace nuevo a ${user.email}',
+      },
       builder: (context, state, submit) => InfoPanel(
         title: 'Correo',
         icon: Icons.mail_outline,
@@ -100,12 +103,25 @@ class _EmailPanel extends StatelessWidget {
               AppButton.text(
                 label: 'Reenviar verificación',
                 loading: state.submitting,
-                onPressed: () => submit(api.resendVerifyEmail),
+                onPressed: () => submit(() => _resendVerifyEmail(api)),
               ),
           ]),
         ],
       ),
     );
+  }
+}
+
+/// Reenvía el enlace de verificación. Si el backend responde que ya está
+/// verificado (lo verificó desde el enlace y la app no se enteró), devuelve el
+/// usuario actualizado para que [ProfileForm] actualice la sesión.
+Future<SessionUser?> _resendVerifyEmail(UserApi api) async {
+  try {
+    await api.resendVerifyEmail();
+    return null;
+  } on ApiException catch (e) {
+    if (e.status != 409) rethrow;
+    return api.me();
   }
 }
 

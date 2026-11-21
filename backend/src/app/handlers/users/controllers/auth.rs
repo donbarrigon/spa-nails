@@ -8,7 +8,7 @@ use crate::app::{
     handlers::users::validators::user::{
         ChangeEmailValidator, ChangePasswordValidator, ChangePhoneValidator, CodeValidator,
         ForgotPasswordValidator, GoogleLinkValidator, GoogleLoginValidator, GoogleRegisterValidator,
-        LinkTokenValidator, LoginTwoFactorValidator, PasswordValidator,
+        LinkTokenValidator, LoginTwoFactorValidator, PasswordValidator, RegisterAvailableValidator,
         ResendTwoFactorValidator, ResetPasswordCodeValidator, ResetPasswordValidator,
         TwoFactorValidator, UserLoginValidator, UserRegisterValidator,
     },
@@ -60,6 +60,32 @@ pub async fn register(c: &mut Context) -> Result<(), ForgeError> {
     History::record(c, user, None, Create, Some("User register")).await;
 
     c.response_created(&*auth.user)
+}
+
+/// `POST /api/users/auth/register/available` — body con uno solo de
+/// `{ "nickname" }`, `{ "email" }` o `{ "phone" }`.
+///
+/// Para avisar en el formulario de registro, cuando el usuario sale del campo,
+/// que el dato ya está en uso. Responde `204` si está libre y `409` con el mismo
+/// mensaje que el registro (`before_create`) si no.
+pub async fn register_available(c: &mut Context) -> Result<(), ForgeError> {
+    let req = c.get_body::<RegisterAvailableValidator>().await?;
+    if req.filled() != 1 {
+        return Err(ForgeError::unprocessable_entity().message("Send exactly one of nickname, email or phone"));
+    }
+
+    let (filter, taken) = if !req.nickname.is_empty() {
+        (doc! { "nickname": &req.nickname }, "Nickname already exists")
+    } else if !req.email.is_empty() {
+        (doc! { "email": &req.email }, "Email already exists")
+    } else {
+        (doc! { "phone": &req.phone }, "Phone already exists")
+    };
+    if User::exists(filter).await? {
+        return Err(ForgeError::conflict().message(taken));
+    }
+
+    c.response_no_content()
 }
 
 /// `POST /api/users/auth/verify/email` — body `{ "token": "..." }` (el del enlace del email).

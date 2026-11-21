@@ -29,6 +29,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _email = TextEditingController();
   final _phone = TextEditingController();
   final _password = TextEditingController();
+  final _confirmation = TextEditingController();
   late final _googleEmail = TextEditingController(text: widget.google?.identity.email);
   late bool _remember = widget.google?.remember ?? true;
 
@@ -42,7 +43,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   void dispose() {
-    for (final c in [_name, _nickname, _email, _phone, _password, _googleEmail]) {
+    for (final c in [_name, _nickname, _email, _phone, _password, _confirmation, _googleEmail]) {
       c.dispose();
     }
     super.dispose();
@@ -57,6 +58,7 @@ class _RegisterPageState extends State<RegisterPage> {
             email: _email.text,
             phone: _phone.text,
             password: _password.text,
+            passwordConfirmation: _confirmation.text,
             remember: _remember,
           ))
         : GoogleRegisterSubmitted(GoogleRegisterValidator(
@@ -65,6 +67,7 @@ class _RegisterPageState extends State<RegisterPage> {
             name: _name.text,
             phone: _phone.text,
             password: _password.text,
+            passwordConfirmation: _confirmation.text,
             remember: _remember,
           )));
   }
@@ -121,25 +124,31 @@ class _RegisterPageState extends State<RegisterPage> {
           autofillHints: const [AutofillHints.name],
         ),
         gap,
-        AppTextField(
-          label: 'Nombre de usuario',
-          hint: 'ej. ana.perez',
-          controller: _nickname,
-          error: state.fields['nickname'],
-          enabled: !busy,
-          textInputAction: TextInputAction.next,
-          autofillHints: const [AutofillHints.newUsername],
+        _LeaveCheck(
+          onLeave: () => _bloc.add(RegisterFieldLeft('nickname', _nickname.text)),
+          child: AppTextField(
+            label: 'Nombre de usuario',
+            hint: 'ej. ana.perez',
+            controller: _nickname,
+            error: state.fields['nickname'],
+            enabled: !busy,
+            textInputAction: TextInputAction.next,
+            autofillHints: const [AutofillHints.newUsername],
+          ),
         ),
         gap,
         if (google == null) ...[
-          AppTextField(
-            label: 'Correo',
-            controller: _email,
-            error: state.fields['email'],
-            enabled: !busy,
-            keyboardType: TextInputType.emailAddress,
-            textInputAction: TextInputAction.next,
-            autofillHints: const [AutofillHints.email],
+          _LeaveCheck(
+            onLeave: () => _bloc.add(RegisterFieldLeft('email', _email.text)),
+            child: AppTextField(
+              label: 'Correo',
+              controller: _email,
+              error: state.fields['email'],
+              enabled: !busy,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              autofillHints: const [AutofillHints.email],
+            ),
           ),
           gap,
         ] else ...[
@@ -151,16 +160,19 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
           gap,
         ],
-        AppTextField(
-          label: 'Teléfono',
-          hint: '+57 300 123 4567',
-          helper: 'Con el código de país. Te enviaremos un código por WhatsApp para verificarlo.',
-          controller: _phone,
-          error: state.fields['phone'],
-          enabled: !busy,
-          keyboardType: TextInputType.phone,
-          textInputAction: TextInputAction.next,
-          autofillHints: const [AutofillHints.telephoneNumber],
+        _LeaveCheck(
+          onLeave: () => _bloc.add(RegisterFieldLeft('phone', _phone.text)),
+          child: AppTextField(
+            label: 'Teléfono',
+            hint: '+57 300 123 4567',
+            helper: 'Con el código de país. Te enviaremos un código por WhatsApp para verificarlo.',
+            controller: _phone,
+            error: state.fields['phone'],
+            enabled: !busy,
+            keyboardType: TextInputType.phone,
+            textInputAction: TextInputAction.next,
+            autofillHints: const [AutofillHints.telephoneNumber],
+          ),
         ),
         gap,
         AppTextField(
@@ -169,6 +181,16 @@ class _RegisterPageState extends State<RegisterPage> {
           controller: _password,
           password: true,
           error: state.fields['password'],
+          enabled: !busy,
+          textInputAction: TextInputAction.next,
+          autofillHints: const [AutofillHints.newPassword],
+        ),
+        gap,
+        AppTextField(
+          label: 'Repite la contraseña',
+          controller: _confirmation,
+          password: true,
+          error: state.fields['password_confirmation'],
           enabled: !busy,
           textInputAction: TextInputAction.done,
           autofillHints: const [AutofillHints.newPassword],
@@ -203,4 +225,22 @@ class _RegisterPageState extends State<RegisterPage> {
       ],
     );
   }
+}
+
+/// Avisa cuando el foco sale del campo de adentro (no en cada tecla).
+class _LeaveCheck extends StatelessWidget {
+  const _LeaveCheck({required this.onLeave, required this.child});
+
+  final VoidCallback onLeave;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Focus(
+        canRequestFocus: false,
+        skipTraversal: true,
+        onFocusChange: (focused) {
+          if (!focused) onLeave();
+        },
+        child: child,
+      );
 }

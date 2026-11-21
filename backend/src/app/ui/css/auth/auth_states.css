@@ -1,0 +1,7 @@
+/* Páginas de auth con varios pasos (verificar correo, recuperar y restablecer
+   contraseña): un estado (`data-state`) visible a la vez. */
+
+.auth-state { display: grid; }
+.auth-state > * + * { margin-top: 14px; }
+.auth-state .auth-form__intro { margin-top: 6px; }
+.auth-state .auth-form__lead { margin-top: 24px; }

@@ -30,6 +30,14 @@
 }
 .auth-form__back { justify-self: start; margin-left: -12px; }
 .auth-form__links { display: flex; flex-wrap: wrap; justify-content: center; }
+/* "Recordarme" a la izquierda y "¿Olvidaste tu contraseña?" a la derecha. */
+.auth-form__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0 8px;
+}
 
 .remember-me {
   display: inline-flex;

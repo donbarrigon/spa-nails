@@ -4,6 +4,7 @@
 
 mod app_shared_models_user;
 mod app_handlers_users_validators_profile;
+mod app_handlers_users_validators_user;
 mod app_shared_services_google;
 mod app_shared_services_totp;
 

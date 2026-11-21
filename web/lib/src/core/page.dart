@@ -21,3 +21,11 @@ List<web.Element> queryAll(String selector, [web.Element? root]) {
   final nodes = root == null ? web.document.querySelectorAll(selector) : root.querySelectorAll(selector);
   return [for (var i = 0; i < nodes.length; i++) nodes.item(i)! as web.Element];
 }
+
+/// En las páginas con pasos: muestra el hijo de [root] con `data-state="[state]"`
+/// y oculta los demás.
+void showState(web.Element root, String state) {
+  for (final section in queryAll('[data-state]', root)) {
+    section.toggleAttribute('hidden', section.getAttribute('data-state') != state);
+  }
+}

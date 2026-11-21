@@ -54,6 +54,9 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
           yield SessionActive(user, remember: remember);
         }
 
+      case SessionRefreshRequested():
+        yield* _refresh();
+
       case SessionLogoutRequested():
         try {
           await _userApi.logout();
@@ -90,6 +93,28 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
     } on ApiException catch (e) {
       debugPrint('session check: $e');
       yield const SessionGuest(offline: true);
+    }
+  }
+
+  /// Como [_check] pero solo con sesión activa y sin pasar por [SessionChecking]:
+  /// sin red se queda con el usuario que tenía.
+  Stream<SessionState> _refresh() async* {
+    if (state is! SessionActive) return;
+    try {
+      final user = await _userApi.me();
+      // Pudo cerrar sesión mientras esperaba la respuesta.
+      if (state case SessionActive(:final remember)) {
+        if (user != null) {
+          yield SessionActive(user, remember: remember);
+        } else {
+          // Venció o la cerraron desde otro dispositivo.
+          _api.sessionCookie = null;
+          await _storage.clear();
+          yield const SessionGuest(promptLogin: true);
+        }
+      }
+    } on ApiException catch (e) {
+      debugPrint('session refresh: $e');
     }
   }
 }

@@ -41,6 +41,43 @@ impl Validator for UserRegisterValidator {
     }
 }
 
+/// Revisa en el registro, antes de enviarlo, si un nombre de usuario, email o
+/// teléfono ya está en uso. Va uno solo por request (el campo que el usuario
+/// acaba de dejar); los demás vienen vacíos.
+#[derive(Serialize, Deserialize)]
+pub struct RegisterAvailableValidator {
+    #[serde(default)]
+    pub nickname: String,
+    #[serde(default)]
+    pub email: String,
+    #[serde(default)]
+    pub phone: String,
+}
+impl RegisterAvailableValidator {
+    /// Cuántos campos vinieron con valor (debe ser uno).
+    pub fn filled(&self) -> usize {
+        [&self.nickname, &self.email, &self.phone].iter().filter(|v| !v.is_empty()).count()
+    }
+}
+impl Validator for RegisterAvailableValidator {
+    fn prepare_for_validation(&mut self, _: &mut Context) -> Result<(), ValidationError> {
+        self.email = self.email.trim().to_lowercase();
+        self.nickname = self.nickname.trim().to_string();
+        self.phone = normalize_phone(&self.phone);
+        Ok(())
+    }
+
+    /// Mismo formato que en `UserRegisterValidator`, pero cada campo es opcional.
+    fn validate(&mut self, c: &mut Context) -> Result<(), ValidationError> {
+        rules! {
+            self, c,
+            nickname => [ empty_or_username().msg("the :field field format is invalid") ],
+            email => [ empty_or_email().msg("the :field field format is invalid") ],
+            phone => [ empty_or_phone().msg("the :field field must include a known country code") ],
+        }
+    }
+}
+
 /// Token de un enlace enviado por email o WhatsApp (64 caracteres hex).
 #[derive(Serialize, Deserialize)]
 pub struct LinkTokenValidator {
@@ -452,6 +489,12 @@ trait UserRules {
     fn known_phone_code(&self) -> bool;
     /// Email válido, o teléfono con código de país conocido.
     fn email_or_phone(&self) -> bool;
+    /// Vacío, o nombre de usuario válido (como en el registro).
+    fn empty_or_username(&self) -> bool;
+    /// Vacío, o email válido.
+    fn empty_or_email(&self) -> bool;
+    /// Vacío, o teléfono con código de país conocido.
+    fn empty_or_phone(&self) -> bool;
 }
 
 impl UserRules for str {
@@ -465,5 +508,17 @@ impl UserRules for str {
         } else {
             self.re_phone_code() && self.known_phone_code()
         }
+    }
+
+    fn empty_or_username(&self) -> bool {
+        self.is_empty() || self.re_username(3, 30)
+    }
+
+    fn empty_or_email(&self) -> bool {
+        self.is_empty() || self.re_email()
+    }
+
+    fn empty_or_phone(&self) -> bool {
+        self.is_empty() || (self.re_phone_code() && self.known_phone_code())
     }
 }

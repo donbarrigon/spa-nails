@@ -1,5 +1,5 @@
 use ironforge::handler::resources;
-use ironforge::middleware::rate_limit;
+use ironforge::middleware::{rate_limit_group, rate_limit_ip};
 use ironforge::server::Router;
 
 use crate::app::handlers::home::controllers::home;
@@ -11,6 +11,9 @@ pub fn app_routes() -> Router {
         r.get("/", home::home);
         r.get("/login", auth_page::login_page);
         r.get("/register", auth_page::register_page);
+        r.get("/verify-email", auth_page::verify_email_page);
+        r.get("/forgot-password", auth_page::forgot_password_page);
+        r.get("/reset-password", auth_page::reset_password_page);
         r.prefix("/profile", |r| {
             r.get("/", profile_page::overview);
             r.get("/account", profile_page::account);
@@ -21,7 +24,7 @@ pub fn app_routes() -> Router {
 
         r.prefix("/api", |r| {
             // Rutas que hashean o verifican contraseñas con argon2 (caras en CPU/RAM).
-            r.group("/users/auth", rate_limit(4, 60), |r| {
+            r.group("/users/auth", rate_limit_ip(4, 60), |r| {
                 r.post("/register", auth::register);
                 r.post("/register/google", auth::google_register);
                 r.post("/login", auth::login);
@@ -39,15 +42,15 @@ pub fn app_routes() -> Router {
             });
 
             // Resto de rutas de usuarios. Un solo límite compartido entre los dos grupos.
-            let users = rate_limit(30, 60);
-            r.group("/users/profile", users.clone(), |r| {
+            r.group("/users/profile", rate_limit_group(30, 60, "users"), |r| {
                 r.put("/", profile::update);
                 r.put("/preferences", profile::update_preferences);
             });
-            r.group("/users/auth", users, |r| {
+            r.group("/users/auth", rate_limit_group(30, 60, "users"), |r| {
                 r.post("/login/two-factor", auth::login_two_factor);
                 r.post("/login/two-factor/resend", auth::resend_two_factor);
                 r.post("/login/google", auth::google_login);
+                r.post("/register/available", auth::register_available);
                 r.post("/logout", auth::logout);
                 r.post("/logout/all", auth::logout_all);
                 r.get("/me", auth::me);

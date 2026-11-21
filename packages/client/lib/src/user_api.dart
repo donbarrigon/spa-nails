@@ -52,6 +52,17 @@ class UserApi {
   Future<SessionUser> register(UserRegisterValidator form) async =>
       _user(await _api.post('/api/users/auth/register', form.toJson()));
 
+  /// `true` si el dato del registro está libre, `false` si ya es de otra cuenta (`409`).
+  Future<bool> registerAvailable(RegisterAvailableValidator form) async {
+    try {
+      await _api.post('/api/users/auth/register/available', form.toJson());
+      return true;
+    } on ApiException catch (e) {
+      if (e.status == 409) return false;
+      rethrow;
+    }
+  }
+
   Future<SessionUser> googleRegister(GoogleRegisterValidator form) async =>
       _user(await _api.post('/api/users/auth/register/google', form.toJson()));
 
@@ -67,6 +78,21 @@ class UserApi {
 
   Future<void> logout() async {
     await _api.post('/api/users/auth/logout');
+  }
+
+  // == Recuperar contraseña (sin sesión) =====================================
+
+  /// Envía el enlace (email) o el código (WhatsApp) y responde por dónde, exista
+  /// o no la cuenta. `429` si pidió demasiados.
+  Future<TwoFactorMethod> forgotPassword(ForgotPasswordValidator form) async {
+    final res = await _api.post('/api/users/auth/password/forgot', form.toJson());
+    return TwoFactorMethod.tryParse(res.json['method']) ?? TwoFactorMethod.email;
+  }
+
+  /// Con el código de WhatsApp. Cierra todas las sesiones, también la actual.
+  /// `404` si el código no es correcto o venció; `410` si el teléfono cambió.
+  Future<void> resetPasswordCode(ResetPasswordCodeValidator form) async {
+    await _api.post('/api/users/auth/password/reset/code', form.toJson());
   }
 
   // == Cuenta (con sesión) ====================================================

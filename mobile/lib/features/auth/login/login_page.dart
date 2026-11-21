@@ -41,6 +41,12 @@ class _LoginPageState extends State<LoginPage> {
         UserLoginValidator(user: _user.text, password: _password.text, remember: _remember),
       ));
 
+  /// Abre la recuperación con lo que ya escribió en "Correo o teléfono".
+  void _forgot() {
+    final user = _user.text.trim();
+    Routes.toForgotPassword(context, user: user.isEmpty ? null : user);
+  }
+
   void _onState(BuildContext context, LoginState state) {
     switch (state) {
       case LoginDone(:final user, :final remember):
@@ -117,12 +123,19 @@ class _LoginPageState extends State<LoginPage> {
           onSubmitted: (_) => _submit(),
         ),
         const SizedBox(height: 4),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: RememberMe(
-            value: _remember,
-            onChanged: busy ? null : (v) => setState(() => _remember = v),
-          ),
+        Wrap(
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            RememberMe(
+              value: _remember,
+              onChanged: busy ? null : (v) => setState(() => _remember = v),
+            ),
+            AppButton.text(
+              label: '¿Olvidaste tu contraseña?',
+              onPressed: busy ? null : _forgot,
+            ),
+          ],
         ),
         if (state.error case final error?) ...[
           const SizedBox(height: 8),

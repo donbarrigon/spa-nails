@@ -32,6 +32,13 @@ final class SessionUserUpdated extends SessionEvent {
   final SessionUser user;
 }
 
+/// Volver a pedir el usuario al backend, sin mostrar carga. Al volver a la app:
+/// el usuario pudo cambiar algo fuera de ella (verificar el correo desde el
+/// enlace del email, confirmar un cambio de correo...).
+final class SessionRefreshRequested extends SessionEvent {
+  const SessionRefreshRequested();
+}
+
 final class SessionLogoutRequested extends SessionEvent {
   const SessionLogoutRequested();
 }

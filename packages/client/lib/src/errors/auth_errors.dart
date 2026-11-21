@@ -31,11 +31,27 @@ abstract final class AuthErrors {
         _ => of(e),
       };
 
+  /// Errores al restablecer la contraseña con el enlace o el código.
+  static String ofReset(ApiException e) => switch (e.status) {
+        404 || 422 when e.fields.isEmpty => 'El enlace o el código no es válido o ya venció. Solicita uno nuevo.',
+        410 when e.message.startsWith('This account') => 'Esta cuenta ya no existe.',
+        410 => 'Tus datos de contacto cambiaron después de solicitar la recuperación. Solicita una nueva.',
+        429 => 'Solicitaste demasiadas recuperaciones. Espera unos minutos antes de intentarlo de nuevo.',
+        _ => of(e),
+      };
+
+  /// Error de cada campo del registro cuando el dato ya es de otra cuenta.
+  static const registerTaken = {
+    'nickname': 'Este nombre de usuario ya está en uso',
+    'email': 'Ya hay una cuenta con este correo',
+    'phone': 'Ya hay una cuenta con este teléfono',
+  };
+
   /// Datos repetidos en el registro (`409`), como error del campo que corresponde.
   static Map<String, String> registerConflict(ApiException e) => switch (e.message) {
-        'Nickname already exists' => {'nickname': 'Este nombre de usuario ya está en uso'},
-        'Email already exists' => {'email': 'Ya hay una cuenta con este correo'},
-        'Phone already exists' => {'phone': 'Ya hay una cuenta con este teléfono'},
+        'Nickname already exists' => {'nickname': registerTaken['nickname']!},
+        'Email already exists' => {'email': registerTaken['email']!},
+        'Phone already exists' => {'phone': registerTaken['phone']!},
         _ => const {},
       };
 }

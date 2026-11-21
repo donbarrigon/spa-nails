@@ -15,7 +15,10 @@
     {% call app_text_field::app_text_field("user", "Correo o teléfono", hint="tu@correo.com o +57 300 123 4567", autocomplete="username", inputmode="email", autofocus=true) %}{% endcall %}
   </div>
   {% call app_text_field::app_text_field("password", "Contraseña", password=true, autocomplete="current-password") %}{% endcall %}
-  {% call remember_me::remember_me() %}{% endcall %}
+  <div class="auth-form__row">
+    {% call remember_me::remember_me() %}{% endcall %}
+    {% call app_button::app_button("¿Olvidaste tu contraseña?", variant="text", href="/forgot-password", expand=false) %}{% endcall %}
+  </div>
   {% call message_banner::message_banner(id="login-error") %}{% endcall %}
   <div class="auth-form__actions">
     {% call app_button::app_button("Iniciar sesión") %}{% endcall %}

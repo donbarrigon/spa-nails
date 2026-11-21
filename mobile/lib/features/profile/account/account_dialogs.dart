@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared/shared.dart';
 
+import '../../../components/app_button.dart';
 import '../../../components/app_text_field.dart';
 import '../../../core/deps.dart';
+import '../../../core/router.dart';
 import '../profile_form.dart';
 import '../widgets/account_labels.dart';
 import '../widgets/form_dialog.dart';
@@ -189,7 +191,10 @@ class _PhoneCodeDialogState extends State<PhoneCodeDialog> with _DialogForm {
 // ===============================================================================
 
 class ChangePasswordDialog extends StatefulWidget {
-  const ChangePasswordDialog({super.key});
+  const ChangePasswordDialog({super.key, required this.email});
+
+  /// Para prellenar "¿Olvidaste tu contraseña?".
+  final String email;
 
   @override
   State<ChangePasswordDialog> createState() => _ChangePasswordDialogState();
@@ -198,9 +203,10 @@ class ChangePasswordDialog extends StatefulWidget {
 class _ChangePasswordDialogState extends State<ChangePasswordDialog> with _DialogForm {
   final _current = TextEditingController();
   final _password = TextEditingController();
+  final _confirmation = TextEditingController();
 
   @override
-  List<TextEditingController> get controllers => [_current, _password];
+  List<TextEditingController> get controllers => [_current, _password, _confirmation];
 
   @override
   Widget build(BuildContext context) => ProfileForm(
@@ -208,7 +214,11 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> with _Dialo
         onDone: close,
         builder: (context, state, submit) {
           void send() {
-            final form = ChangePasswordValidator(currentPassword: _current.text, password: _password.text);
+            final form = ChangePasswordValidator(
+              currentPassword: _current.text,
+              password: _password.text,
+              passwordConfirmation: _confirmation.text,
+            );
             final api = AppDeps.of(context).userApi;
             submit(() => api.changePassword(form), form: form);
           }
@@ -237,14 +247,37 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> with _Dialo
                 password: true,
                 error: state.fields['password'],
                 enabled: !state.submitting,
+                textInputAction: TextInputAction.next,
+                autofillHints: const [AutofillHints.newPassword],
+              ),
+              AppTextField(
+                label: 'Repite la contraseña nueva',
+                controller: _confirmation,
+                password: true,
+                error: state.fields['password_confirmation'],
+                enabled: !state.submitting,
                 textInputAction: TextInputAction.done,
                 autofillHints: const [AutofillHints.newPassword],
                 onSubmitted: (_) => send(),
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: AppButton.text(
+                  label: '¿Olvidaste tu contraseña?',
+                  onPressed: state.submitting ? null : _forgot,
+                ),
               ),
             ],
           );
         },
       );
+
+  /// Cierra el diálogo y abre la recuperación con su correo.
+  void _forgot() {
+    final navigator = Navigator.of(context);
+    navigator.pop();
+    Routes.toForgotPassword(navigator.context, user: widget.email);
+  }
 }
 
 // ===============================================================================

@@ -80,8 +80,8 @@ void main() {
     });
 
     test('ChangePasswordValidator usa los nombres del backend', () {
-      final form = ChangePasswordValidator(currentPassword: '', password: 'corta');
-      expect(form.validate().keys, containsAll(['current_password', 'password']));
+      final form = ChangePasswordValidator(currentPassword: '', password: 'corta', passwordConfirmation: 'otra');
+      expect(form.validate().keys, containsAll(['current_password', 'password', 'password_confirmation']));
       expect(form.toJson().keys, ['current_password', 'password']);
     });
 
